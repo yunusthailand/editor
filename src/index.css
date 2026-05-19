@@ -1,0 +1,20 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8f8f8;
+  --foreground: #171717;
+}
+
+body {
+  /* @apply font-sans; */
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Jost", "Sarabun", sans-serif;
+}
+
+.fade-in {
+  @apply opacity-0 animate-fadeIn;
+}

@@ -1,0 +1,204 @@
+import { useEffect, useRef, useState } from "react";
+
+const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
+export default function CreateTeamMemberForm() {
+  const formRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [file, setFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    role: "",
+    team: "",
+    description: "",
+    linkedin: "",
+    role_th: "",
+    description_th: "",
+  });
+
+  useEffect(() => {
+    if (!file) {
+      setImagePreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleFileChange(e) {
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    try {
+      const form = new FormData();
+      Object.entries(formData).forEach(([key, value]) =>
+        form.append(key, value),
+      );
+      if (file) form.append("image", file);
+      const response = await fetch(`${apiUrl}/team/add`, {
+        method: "POST",
+        body: form,
+      });
+      if (!response.ok) throw new Error("Failed to create member");
+      setMessage("Team member created successfully");
+      formRef.current.reset();
+      setFile(null);
+      setImagePreview(null);
+      setFormData({
+        name: "",
+        role: "",
+        team: "",
+        description: "",
+        linkedin: "",
+        role_th: "",
+        description_th: "",
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage("Error creating member");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="max-w-96 mx-auto">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs"
+      >
+        <div className="space-y-2">
+          <label className="font-medium">Team Image</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} />
+        </div>
+        {imagePreview && (
+          <div className="mt-4 w-[120px] h-[120px] border rounded overflow-hidden">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <Divider label="English" />
+        <FormInput
+          label="Name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+        />
+        <FormInput
+          label="Role"
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+        />
+        <TeamSelect value={formData.team} onChange={handleChange} />
+        <FormTextarea
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+        />
+
+        <Divider label="ภาษาไทย" />
+        <FormInput
+          label="ตำแหน่ง (Role TH)"
+          name="role_th"
+          value={formData.role_th}
+          onChange={handleChange}
+        />
+        <FormTextarea
+          label="คำอธิบาย (Description TH)"
+          name="description_th"
+          value={formData.description_th}
+          onChange={handleChange}
+        />
+
+        <Divider label="Links" />
+        <FormInput
+          label="LinkedIn"
+          name="linkedin"
+          value={formData.linkedin}
+          onChange={handleChange}
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="p-2 bg-secondary-t text-white rounded"
+        >
+          {loading ? "Uploading..." : "Add Team Member"}
+        </button>
+        {message && <p className="text-secondary-t">{message}</p>}
+      </form>
+    </div>
+  );
+}
+
+function Divider({ label }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <div className="h-px flex-1 bg-gray-200" />
+      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-gray-200" />
+    </div>
+  );
+}
+
+function FormInput({ label, ...props }) {
+  return (
+    <div className="space-y-1">
+      <label className="block font-medium">{label}</label>
+      <input {...props} className="w-full border rounded p-2" />
+    </div>
+  );
+}
+
+function FormTextarea({ label, ...props }) {
+  return (
+    <div className="space-y-1">
+      <label className="block font-medium">{label}</label>
+      <textarea {...props} rows={6} className="w-full border rounded p-2" />
+    </div>
+  );
+}
+
+function TeamSelect(props) {
+  const options = [
+    "Ventures",
+    "Operations",
+    "Advisors",
+    "Leaderships",
+    "Programs",
+  ];
+  return (
+    <div className="space-y-1">
+      <label className="block font-medium">Select Team</label>
+      <select {...props} name="team" className="w-full border rounded p-2">
+        <option value="">Select Team</option>
+        {options.map((team) => (
+          <option key={team} value={team}>
+            {team}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
