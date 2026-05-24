@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-
 import renderBlock from "./renderers/renderBlock";
-
 import { formatHead } from "@/utils/helpers";
 
 export default function PreviewPanel({
@@ -13,41 +11,39 @@ export default function PreviewPanel({
   blogId,
   category,
   subcategory,
+  lang,
 }) {
   const [src, setSrc] = useState(null);
 
   useEffect(() => {
     if (headerImage instanceof File) {
       const objectUrl = URL.createObjectURL(headerImage);
-
       setSrc(objectUrl);
-
       return () => URL.revokeObjectURL(objectUrl);
     }
-
     if (typeof headerImage === "string" && headerImage.startsWith("http")) {
       setSrc(headerImage);
     }
   }, [headerImage]);
 
-  const options = {
-    year: "numeric",
-
-    month: "long",
-
-    day: "numeric",
-  };
-
+  const options = { year: "numeric", month: "long", day: "numeric" };
   const readableDate = blogDate
     ? new Date(blogDate).toLocaleDateString("en-US", options)
     : "Loading...";
-
   const now = new Date().toLocaleDateString("en-US", options);
 
   return (
     <main className="pt-12 px-2 w-[972px] flex flex-col space-y-12 mx-auto border-4 border-secondary-y bg-white min-h-screen">
-      {/* Header */}
+      {/* Lang indicator */}
+      <div className="flex justify-center">
+        <span
+          className={`text-xs px-3 py-1 rounded-full font-medium ${lang === "th" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}`}
+        >
+          Previewing: {lang === "th" ? "ภาษาไทย" : "English"}
+        </span>
+      </div>
 
+      {/* Header */}
       <div className="flex flex-col gap-2 items-center">
         <h3 className="text-primary text-sm lg:text-[22px] text-center">
           {category === "perspectives"
@@ -56,23 +52,19 @@ export default function PreviewPanel({
               ? formatHead(subcategory)
               : "- Select Subcategory -"}
         </h3>
-
         <h1 className="text-center leading-relaxed font-medium sm:leading-normal sm:text-2xl xl:leading-normal text-lg lg:text-[40px]">
           {title || "Untitled Blog"}
         </h1>
       </div>
 
       {/* Author */}
-
       {category === "perspectives" && (
         <div className="flex justify-between items-center">
           <p>{blogId ? readableDate : now}</p>
-
           <div className="flex items-center gap-4">
             <span className="text-primary font-medium text-xs lg:text-base xl:text-lg">
               Written By
             </span>
-
             {author ? (
               <>
                 <img
@@ -80,7 +72,6 @@ export default function PreviewPanel({
                   alt={author.name}
                   className="object-cover size-12 rounded-full"
                 />
-
                 <p className="text-sm lg:text-lg">{author.name}</p>
               </>
             ) : (
@@ -91,7 +82,6 @@ export default function PreviewPanel({
       )}
 
       {/* Header Image */}
-
       <div className="w-full h-96 relative overflow-hidden rounded-xl">
         {src ? (
           <img src={src} alt={title} className="w-full h-full object-cover" />
@@ -103,12 +93,18 @@ export default function PreviewPanel({
       </div>
 
       {/* Blocks */}
-
       <section className="pb-12">
         {editors.length > 0 ? (
           editors.map((ele, ind) => (
             <div key={ind}>
-              {renderBlock(ele.type, ele.load, ele.config, ele.visible)}
+              {renderBlock(
+                ele.type,
+                ele.load,
+                ele.config,
+                ele.visible,
+                ele.load_th,
+                lang,
+              )}
             </div>
           ))
         ) : (

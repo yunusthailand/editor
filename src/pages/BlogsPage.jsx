@@ -126,7 +126,7 @@ function BlogBar() {
 
       <button
         className="bg-primary hover:bg-teal-500 transition-all text-white p-4 rounded-lg text-sm"
-        onClick={() => navigate("/admin/editor")}
+        onClick={() => navigate("/editor")}
       >
         + Create New Blog
       </button>

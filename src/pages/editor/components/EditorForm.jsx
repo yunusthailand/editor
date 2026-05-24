@@ -1,92 +1,51 @@
 import { FaCaretDown, FaCaretUp } from "react-icons/fa6";
-
 import DynamicInput from "./DynamicInput";
-
 import { alignmentOptions, bgOptions } from "../DATA";
 
-export default function EditorForm({ index, dispatch, editor }) {
-  const { type, load, config, expanded, visible, desc } = editor;
+export default function EditorForm({ index, dispatch, editor, lang }) {
+  const { type, load, load_th, config, expanded, visible, desc } = editor;
+
+  const activeLoad = lang === "th" ? load_th || load : load;
 
   function handleConfigChange(e, key) {
     dispatch({
       type: "UPDATE",
-
       index,
-
       key: "config",
-
-      value: {
-        ...config,
-        [key]: e.target.value,
-      },
+      value: { ...config, [key]: e.target.value },
     });
   }
 
   const selectOptions = [
-    {
-      key: "align",
-      options: alignmentOptions,
-    },
-
-    {
-      key: "bg",
-      options: bgOptions,
-    },
+    { key: "align", options: alignmentOptions },
+    { key: "bg", options: bgOptions },
   ];
 
   return (
     <div className="p-3 border rounded bg-white shadow-sm space-y-2">
-      {/* Top Controls */}
-
       <div
-        className={`flex justify-between items-center gap-3 ${
-          expanded ? "mb-2" : ""
-        }`}
+        className={`flex justify-between items-center gap-3 ${expanded ? "mb-2" : ""}`}
       >
-        {/* Delete */}
-
         <button
-          onClick={() =>
-            dispatch({
-              type: "DELETE",
-              index,
-            })
-          }
+          onClick={() => dispatch({ type: "DELETE", index })}
           className="text-rose-700 hover:scale-110 transition-all"
         >
           <span className="text-lg">🗑️</span>
         </button>
-
-        {/* Visibility */}
-
         <button
           onClick={() =>
-            dispatch({
-              type: "UPDATE",
-
-              index,
-
-              key: "visible",
-
-              value: !visible,
-            })
+            dispatch({ type: "UPDATE", index, key: "visible", value: !visible })
           }
           className={`transition-all ${visible ? "opacity-100" : "opacity-40"}`}
         >
           <span className="text-lg">👁️</span>
         </button>
-
-        {/* Expand Toggle */}
-
         <button
           onClick={() =>
             dispatch({
               type: "UPDATE",
-
               index,
-
               key: "expanded",
-
               value: !expanded,
             })
           }
@@ -94,32 +53,14 @@ export default function EditorForm({ index, dispatch, editor }) {
         >
           {type.toUpperCase()}
         </button>
-
-        {/* Reorder */}
-
         <div className="flex gap-1">
           {[
-            {
-              increment: -1,
-              Icon: FaCaretUp,
-            },
-
-            {
-              increment: 1,
-              Icon: FaCaretDown,
-            },
+            { increment: -1, Icon: FaCaretUp },
+            { increment: 1, Icon: FaCaretDown },
           ].map(({ increment, Icon }) => (
             <button
               key={increment}
-              onClick={() =>
-                dispatch({
-                  type: "REORDER",
-
-                  index,
-
-                  increment,
-                })
-              }
+              onClick={() => dispatch({ type: "REORDER", index, increment })}
               className="cursor-pointer text-lg"
             >
               <Icon />
@@ -128,15 +69,10 @@ export default function EditorForm({ index, dispatch, editor }) {
         </div>
       </div>
 
-      {/* Expanded Content */}
-
       {expanded && (
         <>
           <hr />
-
           <div className="flex flex-col space-y-3">
-            {/* Config Selects */}
-
             <div className="flex gap-2">
               {selectOptions.map(({ key, options }) => (
                 <select
@@ -153,15 +89,9 @@ export default function EditorForm({ index, dispatch, editor }) {
                 </select>
               ))}
             </div>
-
-            {/* Description */}
-
             <p className="text-neutral-600 text-xs leading-relaxed">{desc}</p>
-
-            {/* Dynamic Inputs */}
-
-            {load &&
-              Object.entries(load).map(([key, value]) =>
+            {activeLoad &&
+              Object.entries(activeLoad).map(([key, value]) =>
                 key !== "expanded" ? (
                   <DynamicInput
                     key={key}
@@ -170,6 +100,7 @@ export default function EditorForm({ index, dispatch, editor }) {
                     value={value}
                     dispatch={dispatch}
                     config={config}
+                    lang={lang}
                   />
                 ) : null,
               )}
