@@ -16,6 +16,7 @@ export default function CreateTeamMemberForm() {
     linkedin: "",
     role_th: "",
     description_th: "",
+    isGuest: false,
   });
 
   useEffect(() => {
@@ -29,8 +30,11 @@ export default function CreateTeamMemberForm() {
   }, [file]);
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   }
 
   function handleFileChange(e) {
@@ -64,6 +68,7 @@ export default function CreateTeamMemberForm() {
         linkedin: "",
         role_th: "",
         description_th: "",
+        isGuest: false,
       });
     } catch (err) {
       console.error(err);
@@ -136,6 +141,24 @@ export default function CreateTeamMemberForm() {
           value={formData.linkedin}
           onChange={handleChange}
         />
+
+        <Divider label="Visibility" />
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            name="isGuest"
+            checked={formData.isGuest}
+            onChange={handleChange}
+            className="mt-0.5"
+          />
+          <span>
+            Hide from public team page
+            <span className="block text-gray-400">
+              Use for placeholder authors such as “Yunus Team”. They can still
+              be credited on blog posts.
+            </span>
+          </span>
+        </label>
 
         <button
           type="submit"

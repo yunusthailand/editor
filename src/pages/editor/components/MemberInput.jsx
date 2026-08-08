@@ -8,7 +8,9 @@ export default function MemberInput({ author, setAuthor }) {
   useEffect(() => {
     async function getMembers() {
       try {
-        const response = await fetch(`${apiUrl}/team/all`);
+        // includeHidden so placeholder authors such as "Yunus Team" can be
+        // credited on a post even though they're off the public roster.
+        const response = await fetch(`${apiUrl}/team/all?includeHidden=true`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch members");

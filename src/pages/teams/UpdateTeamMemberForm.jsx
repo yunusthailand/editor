@@ -16,6 +16,7 @@ export default function UpdateTeamMemberForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -26,11 +27,14 @@ export default function UpdateTeamMemberForm() {
     youtube: "",
     role_th: "",
     description_th: "",
+    isGuest: false,
   });
 
   async function fetchMembers() {
     try {
-      const response = await fetch(`${apiUrl}/team/all`);
+      // Hidden members must stay editable here even though they're off the
+      // public roster — otherwise the placeholder author can't be managed.
+      const response = await fetch(`${apiUrl}/team/all?includeHidden=true`);
       const result = await response.json();
       setMembers(result);
     } catch (err) {
@@ -64,6 +68,7 @@ export default function UpdateTeamMemberForm() {
           youtube: member.links?.[1]?.url || "",
           role_th: member.role_th || "",
           description_th: member.description_th || "",
+          isGuest: member["is-guest"] === true,
         });
         setImagePreview(member.image || null);
         setError("");
@@ -78,11 +83,15 @@ export default function UpdateTeamMemberForm() {
   }, [selectedId]);
 
   function handleChange(e) {
-    const { name, value, type, files } = e.target;
+    const { name, value, type, files, checked } = e.target;
     if (type === "file" && files.length) {
       const file = files[0];
       setFormData((prev) => ({ ...prev, image: file }));
       setImagePreview(URL.createObjectURL(file));
+      return;
+    }
+    if (type === "checkbox") {
+      setFormData((prev) => ({ ...prev, [name]: checked }));
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -111,18 +120,67 @@ export default function UpdateTeamMemberForm() {
     }
   }
 
-  async function handleDelete(id) {
-    const confirmed = window.confirm("Delete this member?");
-    if (!confirmed) return;
+  // Deleting a member reassigns everything they wrote, so the count is fetched
+  // and shown before the admin commits to it.
+  async function requestDelete(member) {
     try {
-      const response = await fetch(`${apiUrl}/team/${id}`, {
-        method: "DELETE",
+      const response = await fetch(`${apiUrl}/team/${member.id}/blog-count`);
+      if (!response.ok) throw new Error("Could not check authored blogs");
+      const { count } = await response.json();
+
+      const fallback = members.find(
+        (m) => m["is-guest"] === true && m.id !== member.id,
+      );
+
+      setDeleteTarget({
+        member,
+        blogCount: count,
+        reassignTo: fallback ? String(fallback.id) : "",
+        error: "",
+        busy: false,
       });
-      if (!response.ok) throw new Error("Delete failed");
-      fetchMembers();
-      if (selectedId === id) setSelectedId(null);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Could not check authored blogs");
+    }
+  }
+
+  async function confirmDelete() {
+    const { member, blogCount, reassignTo } = deleteTarget;
+
+    if (blogCount > 0 && !reassignTo) {
+      setDeleteTarget((prev) => ({
+        ...prev,
+        error: "Choose someone to reassign these posts to.",
+      }));
+      return;
+    }
+
+    setDeleteTarget((prev) => ({ ...prev, busy: true, error: "" }));
+
+    try {
+      const url = new URL(`${apiUrl}/team/${member.id}`);
+      if (blogCount > 0) url.searchParams.set("reassignTo", reassignTo);
+
+      const response = await fetch(url, { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+
+      // The server's 409s carry the actionable text — surface it rather than
+      // collapsing every failure into a generic message.
+      if (!response.ok) {
+        throw new Error(result.message || `Delete failed (${response.status})`);
+      }
+
+      setDeleteTarget(null);
+      fetchMembers();
+      if (selectedId === member.id) setSelectedId(null);
+    } catch (err) {
+      console.error(err);
+      setDeleteTarget((prev) => ({
+        ...prev,
+        busy: false,
+        error: err.message || "Delete failed",
+      }));
     }
   }
 
@@ -210,6 +268,24 @@ export default function UpdateTeamMemberForm() {
           onChange={handleChange}
         />
 
+        <Divider label="Visibility" />
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            name="isGuest"
+            checked={formData.isGuest}
+            onChange={handleChange}
+            className="mt-0.5"
+          />
+          <span>
+            Hide from public team page
+            <span className="block text-gray-400">
+              Use for placeholder authors such as “Yunus Team”. They can still
+              be credited on blog posts.
+            </span>
+          </span>
+        </label>
+
         <button
           type="submit"
           disabled={loading}
@@ -237,9 +313,14 @@ export default function UpdateTeamMemberForm() {
                   className="size-8 rounded-full object-cover"
                 />
                 <span className="text-xs">{member.name}</span>
+                {member["is-guest"] === true && (
+                  <span className="text-[10px] uppercase tracking-wide text-gray-400">
+                    hidden
+                  </span>
+                )}
               </button>
               <button
-                onClick={() => handleDelete(member.id)}
+                onClick={() => requestDelete(member)}
                 className="bg-secondary-r text-white px-2 py-1 rounded text-xs"
               >
                 Delete
@@ -247,6 +328,84 @@ export default function UpdateTeamMemberForm() {
             </div>
           ))}
         </section>
+      </div>
+
+      {deleteTarget && (
+        <DeleteMemberDialog
+          target={deleteTarget}
+          members={members}
+          onChangeReassign={(value) =>
+            setDeleteTarget((prev) => ({ ...prev, reassignTo: value }))
+          }
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+function DeleteMemberDialog({
+  target,
+  members,
+  onChangeReassign,
+  onCancel,
+  onConfirm,
+}) {
+  const { member, blogCount, reassignTo, error, busy } = target;
+  const candidates = members.filter((m) => m.id !== member.id);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl p-6 space-y-4 text-xs w-[420px]">
+        <h3 className="text-lg font-light">Delete {member.name}?</h3>
+
+        {blogCount > 0 ? (
+          <>
+            <p>
+              This member is the author of <strong>{blogCount}</strong> blog
+              post{blogCount === 1 ? "" : "s"}. Deleting them will reassign
+              those posts — this cannot be undone.
+            </p>
+            <div className="space-y-1">
+              <label className="block">Reassign their posts to</label>
+              <select
+                value={reassignTo}
+                onChange={(e) => onChangeReassign(e.target.value)}
+                className="w-full border rounded p-2"
+              >
+                <option value="">-- Select a member --</option>
+                {candidates.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {m["is-guest"] === true ? " (placeholder)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        ) : (
+          <p>This member has not authored any blog posts.</p>
+        )}
+
+        {error && <p className="text-red-500">{error}</p>}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 rounded border"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="px-4 py-2 rounded bg-secondary-r text-white disabled:opacity-50"
+          >
+            {busy ? "Deleting..." : "Delete"}
+          </button>
+        </div>
       </div>
     </div>
   );
