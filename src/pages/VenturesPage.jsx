@@ -1,45 +1,29 @@
 import { useState } from "react";
 
-import clsx from "clsx";
+import PageHeader from "@/components/ui/PageHeader";
+import TabBar from "@/components/ui/TabBar";
 
 import CreateVentureForm from "./ventures/CreateVentureForm";
 import UpdateVentureForm from "./ventures/UpdateVentureForm";
+
+const TABS = [
+  { value: "create", label: "Create New Venture" },
+  { value: "update", label: "Edit Venture Details" },
+];
 
 export default function VenturesPage() {
   const [mode, setMode] = useState("create");
 
   return (
     <main className="min-h-screen py-16 space-y-8">
-      <VentureBar mode={mode} setMode={setMode} />
+      <nav className="flex flex-col pb-8 space-y-8 max-w-[960px] mx-auto items-center">
+        <PageHeader title="Ventures" />
+        <TabBar tabs={TABS} value={mode} onChange={setMode} />
+      </nav>
 
       {mode === "create" && <CreateVentureForm />}
 
       {mode === "update" && <UpdateVentureForm />}
     </main>
-  );
-}
-
-function VentureBar({ mode, setMode }) {
-  return (
-    <nav className="flex flex-col pb-8 space-y-8 w-[960px] mx-auto items-center">
-      <h1 className="text-5xl font-thin tracking-wider">Ventures</h1>
-
-      <ol className="flex space-x-2 justify-center">
-        {["create", "update"].map((act) => (
-          <li
-            key={act}
-            className={clsx(
-              "px-4 py-2 rounded-lg border transition-all",
-
-              act === mode && "bg-secondary-t text-white scale-105",
-            )}
-          >
-            <button onClick={() => setMode(act)}>
-              {act === "update" ? "Edit Venture Details" : "Create New Venture"}
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
   );
 }

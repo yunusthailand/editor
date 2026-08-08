@@ -14,7 +14,7 @@ export default function SelectInput({
         name={name}
         value={value}
         onChange={onChange}
-        className="  p-2 rounded w-full border border-neutral-700"
+        className="p-2 rounded-control w-full border border-primary/30"
       >
         <option value="">{placeholder}</option>
 

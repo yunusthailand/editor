@@ -3,6 +3,7 @@ import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import NumberInput from "@/components/form/NumberInput";
 import FileInput from "@/components/form/FileInput";
+import Divider from "@/components/ui/Divider";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -112,7 +113,7 @@ export default function UpdateVentureForm() {
       fetchVentures();
     } catch (err) {
       console.error(err);
-      alert("Error updating venture");
+      setError("Error updating venture");
     } finally {
       setLoading(false);
     }
@@ -232,17 +233,6 @@ export default function UpdateVentureForm() {
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}
 
 function Ventures({
   setVentureId,

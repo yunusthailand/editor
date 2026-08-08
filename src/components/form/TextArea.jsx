@@ -14,7 +14,7 @@ export default function TextArea({
         name={name}
         value={value}
         onChange={onChange}
-        className="  p-2 rounded w-full border border-neutral-700 resize-none"
+        className="p-2 rounded-control w-full border border-primary/30 resize-none"
       />
     </div>
   );

@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import Divider from "@/components/ui/Divider";
+import TextInput from "@/components/form/TextInput";
+import TextArea from "@/components/form/TextArea";
+import SelectInput from "@/components/form/SelectInput";
+import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import StatusMessage from "@/components/ui/StatusMessage";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -17,6 +24,7 @@ export default function UpdateTeamMemberForm() {
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [status, setStatus] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -110,11 +118,11 @@ export default function UpdateTeamMemberForm() {
         body: form,
       });
       if (!response.ok) throw new Error("Update failed");
-      alert("Team member updated");
+      setStatus({ kind: "success", text: "Team member updated" });
       fetchMembers();
     } catch (err) {
       console.error(err);
-      alert("Error updating member");
+      setStatus({ kind: "error", text: err.message || "Error updating member" });
     } finally {
       setLoading(false);
     }
@@ -211,35 +219,26 @@ export default function UpdateTeamMemberForm() {
         )}
 
         <Divider label="English" />
-        <Input
+        <TextInput
           label="Name"
           name="name"
           value={formData.name}
           onChange={handleChange}
         />
-        <Input
+        <TextInput
           label="Role"
           name="role"
           value={formData.role}
           onChange={handleChange}
         />
-        {/*  */}
-        <div className="space-y-1">
-          <label>Team</label>
-          <select
-            name="team"
-            value={formData.team}
-            onChange={handleChange}
-            className="w-full border rounded p-2"
-          >
-            {TEAM_OPTIONS.map((team) => (
-              <option key={team} value={team}>
-                {team}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Textarea
+        <SelectInput
+          label="Team"
+          name="team"
+          value={formData.team}
+          onChange={handleChange}
+          options={TEAM_OPTIONS}
+        />
+        <TextArea
           label="Description"
           name="description"
           value={formData.description}
@@ -247,13 +246,13 @@ export default function UpdateTeamMemberForm() {
         />
 
         <Divider label="ภาษาไทย" />
-        <Input
+        <TextInput
           label="ตำแหน่ง (Role TH)"
           name="role_th"
           value={formData.role_th}
           onChange={handleChange}
         />
-        <Textarea
+        <TextArea
           label="คำอธิบาย (Description TH)"
           name="description_th"
           value={formData.description_th}
@@ -261,7 +260,7 @@ export default function UpdateTeamMemberForm() {
         />
 
         <Divider label="Links" />
-        <Input
+        <TextInput
           label="LinkedIn"
           name="linkedin"
           value={formData.linkedin}
@@ -286,13 +285,12 @@ export default function UpdateTeamMemberForm() {
           </span>
         </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Updating..." : "Update Team Member"}
-        </button>
+        </Button>
+        {status && (
+          <StatusMessage kind={status.kind}>{status.text}</StatusMessage>
+        )}
       </form>
 
       <div className="max-w-[666px] space-y-4">
@@ -319,124 +317,61 @@ export default function UpdateTeamMemberForm() {
                   </span>
                 )}
               </button>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => requestDelete(member)}
-                className="bg-secondary-r text-white px-2 py-1 rounded text-xs"
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ))}
         </section>
       </div>
 
       {deleteTarget && (
-        <DeleteMemberDialog
-          target={deleteTarget}
-          members={members}
-          onChangeReassign={(value) =>
-            setDeleteTarget((prev) => ({ ...prev, reassignTo: value }))
+        <ConfirmDialog
+          danger
+          title={`Delete ${deleteTarget.member.name}?`}
+          message={
+            deleteTarget.blogCount > 0
+              ? `This member is the author of ${deleteTarget.blogCount} blog post${deleteTarget.blogCount === 1 ? "" : "s"}. Deleting them will reassign those posts — this cannot be undone.`
+              : "This member has not authored any blog posts."
           }
+          confirmLabel="Delete"
+          busy={deleteTarget.busy}
+          error={deleteTarget.error}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
-        />
+        >
+          {deleteTarget.blogCount > 0 && (
+            <div className="space-y-1">
+              <label className="block">Reassign their posts to</label>
+              <select
+                value={deleteTarget.reassignTo}
+                onChange={(e) =>
+                  setDeleteTarget((prev) => ({
+                    ...prev,
+                    reassignTo: e.target.value,
+                  }))
+                }
+                className="w-full border rounded-control p-2"
+              >
+                <option value="">-- Select a member --</option>
+                {members
+                  .filter((m) => m.id !== deleteTarget.member.id)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                      {m["is-guest"] === true ? " (placeholder)" : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </ConfirmDialog>
       )}
     </div>
   );
 }
 
-function DeleteMemberDialog({
-  target,
-  members,
-  onChangeReassign,
-  onCancel,
-  onConfirm,
-}) {
-  const { member, blogCount, reassignTo, error, busy } = target;
-  const candidates = members.filter((m) => m.id !== member.id);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-xl p-6 space-y-4 text-xs w-[420px]">
-        <h3 className="text-lg font-light">Delete {member.name}?</h3>
-
-        {blogCount > 0 ? (
-          <>
-            <p>
-              This member is the author of <strong>{blogCount}</strong> blog
-              post{blogCount === 1 ? "" : "s"}. Deleting them will reassign
-              those posts — this cannot be undone.
-            </p>
-            <div className="space-y-1">
-              <label className="block">Reassign their posts to</label>
-              <select
-                value={reassignTo}
-                onChange={(e) => onChangeReassign(e.target.value)}
-                className="w-full border rounded p-2"
-              >
-                <option value="">-- Select a member --</option>
-                {candidates.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                    {m["is-guest"] === true ? " (placeholder)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        ) : (
-          <p>This member has not authored any blog posts.</p>
-        )}
-
-        {error && <p className="text-red-500">{error}</p>}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            onClick={onCancel}
-            disabled={busy}
-            className="px-4 py-2 rounded border"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={busy}
-            className="px-4 py-2 rounded bg-secondary-r text-white disabled:opacity-50"
-          >
-            {busy ? "Deleting..." : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}
-
-function Input({ label, ...props }) {
-  return (
-    <div className="space-y-1">
-      <label className="block">{label}</label>
-      <input {...props} className="w-full border rounded p-2" />
-    </div>
-  );
-}
-
-function Textarea({ label, ...props }) {
-  return (
-    <div className="space-y-1">
-      <label className="block">{label}</label>
-      <textarea {...props} rows={6} className="w-full border rounded p-2" />
-    </div>
-  );
-}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import FileInput from "@/components/form/FileInput";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
+import Divider from "@/components/ui/Divider";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -156,14 +157,3 @@ export default function CreateProgramForm() {
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}

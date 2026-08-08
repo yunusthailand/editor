@@ -4,6 +4,11 @@ import { mapDatabaseImages } from "@/utils/helpers";
 import clsx from "clsx";
 
 import BlogCard from "@/components/blogs/BlogCard";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import Pagination from "@/components/ui/Pagination";
+import Spinner from "@/components/ui/Spinner";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -174,11 +179,12 @@ export default function BlogsPage() {
         onReset={resetFilters}
       />
 
-      <BlogPagination
+      <Pagination
         page={page}
-        setPage={setPage}
         maxPage={maxPage}
+        onChange={setPage}
         totalItems={totalItems}
+        pageSize={PAGE_SIZE}
         shown={blogs.length}
       />
 
@@ -196,23 +202,20 @@ export default function BlogsPage() {
 function Blogs({ blogs, status, error, getBlogs, deleteBlog }) {
   if (status === "error") {
     return (
-      <div className="mx-auto w-11/12 space-y-3 text-primary">
-        <p className="text-secondary-r">Could not load blogs: {error}</p>
-        <button
-          onClick={getBlogs}
-          className="bg-secondary-t text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Retry
-        </button>
-      </div>
+      <EmptyState
+        title="Could not load blogs"
+        message={error}
+        action={<Button onClick={getBlogs}>Retry</Button>}
+      />
     );
   }
 
   if (status === "success" && !blogs.length) {
     return (
-      <p className="mx-auto w-11/12 text-primary">
-        No blogs match these filters.
-      </p>
+      <EmptyState
+        title="No blogs match these filters"
+        message="Try widening the search or clearing a filter."
+      />
     );
   }
 
@@ -223,6 +226,11 @@ function Blogs({ blogs, status, error, getBlogs, deleteBlog }) {
         status === "loading" && "opacity-50",
       )}
     >
+      {status === "loading" && (
+        <div className="w-full flex justify-center py-2">
+          <Spinner />
+        </div>
+      )}
       {blogs.map((blog) => (
         <BlogCard
           key={blog.id}
@@ -240,14 +248,9 @@ function BlogBar() {
 
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-bold">Blogs</h1>
+      <PageHeader title="Blogs" />
 
-      <button
-        className="bg-primary hover:bg-teal-500 transition-all text-white p-4 rounded-lg text-sm"
-        onClick={() => navigate("/editor")}
-      >
-        + Create New Blog
-      </button>
+      <Button onClick={() => navigate("/editor")}>+ Create New Blog</Button>
     </div>
   );
 }
@@ -412,77 +415,11 @@ function BlogFilter({
       </div>
 
       <div className="flex justify-end">
-        <button
-          className="bg-secondary-r p-2 rounded-lg text-white"
-          onClick={onReset}
-        >
-          <span className="text-sm">Reset Filters</span>
-        </button>
+        <Button variant="danger" onClick={onReset}>
+          Reset Filters
+        </Button>
       </div>
     </section>
   );
 }
 
-// First page, last page, and a window around the current one. Rendering every
-// page number is fine at 4 pages and unusable at 40.
-function pageWindow(page, maxPage) {
-  const pages = new Set([1, maxPage, page, page - 1, page + 1]);
-  const visible = [...pages]
-    .filter((p) => p >= 1 && p <= maxPage)
-    .sort((a, b) => a - b);
-
-  return visible.reduce((acc, p, i) => {
-    if (i > 0 && p - visible[i - 1] > 1) acc.push("gap");
-    acc.push(p);
-    return acc;
-  }, []);
-}
-
-function BlogPagination({ page, setPage, maxPage, totalItems, shown }) {
-  const from = totalItems === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const to = (page - 1) * PAGE_SIZE + shown;
-
-  return (
-    <div className="bg-white rounded-2xl p-6 text-primary flex flex-wrap items-center gap-4">
-      <button
-        onClick={() => setPage(page - 1)}
-        disabled={page <= 1}
-        className="border px-4 py-2 rounded-full text-sm transition-all hover:bg-secondary-t hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
-      >
-        ‹
-      </button>
-
-      {pageWindow(page, maxPage).map((p, i) =>
-        p === "gap" ? (
-          <span key={`gap-${i}`} className="text-sm select-none">
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => setPage(p)}
-            className={clsx(
-              "border px-4 py-2 rounded-full text-sm transition-all",
-              "hover:bg-secondary-t hover:text-white",
-              p === page && "bg-secondary-t text-white pointer-events-none",
-            )}
-          >
-            {p}
-          </button>
-        ),
-      )}
-
-      <button
-        onClick={() => setPage(page + 1)}
-        disabled={page >= maxPage}
-        className="border px-4 py-2 rounded-full text-sm transition-all hover:bg-secondary-t hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
-      >
-        ›
-      </button>
-
-      <span className="text-xs ml-auto">
-        Showing {from}–{to} of {totalItems}
-      </span>
-    </div>
-  );
-}
