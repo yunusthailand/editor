@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const apiUrl = "https://backend-yth.onrender.com";
+const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 export default function MemberInput({ author, setAuthor }) {
   const [members, setMembers] = useState([]);

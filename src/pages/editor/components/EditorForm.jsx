@@ -1,11 +1,17 @@
 import { FaCaretDown, FaCaretUp } from "react-icons/fa6";
 import DynamicInput from "./DynamicInput";
-import { alignmentOptions, bgOptions } from "../DATA";
+import { alignmentOptions, bgOptions, eleOptions } from "../DATA";
 
 export default function EditorForm({ index, dispatch, editor, lang }) {
   const { type, load, load_th, config, expanded, visible, desc } = editor;
 
   const activeLoad = lang === "th" ? load_th || load : load;
+
+  // `desc` is copied into each block when it's created and then persisted with
+  // the blog, so saved blocks keep whatever help text was current at the time.
+  // Resolve it from the block registry instead, falling back to the stored copy
+  // for any type that has since been removed.
+  const activeDesc = eleOptions.find((ele) => ele.type === type)?.desc ?? desc;
 
   function handleConfigChange(e, key) {
     dispatch({
@@ -89,12 +95,14 @@ export default function EditorForm({ index, dispatch, editor, lang }) {
                 </select>
               ))}
             </div>
-            <p className="text-neutral-600 text-xs leading-relaxed">{desc}</p>
+            <p className="text-neutral-600 text-xs leading-relaxed">
+              {activeDesc}
+            </p>
             {activeLoad &&
               Object.entries(activeLoad).map(([key, value]) =>
                 key !== "expanded" ? (
                   <DynamicInput
-                    key={key}
+                    key={`${key}-${lang}`}
                     index={index}
                     label={key}
                     value={value}
