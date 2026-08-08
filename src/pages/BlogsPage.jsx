@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mapDatabaseImages, sortArrayByField } from "@/utils/helpers";
+import { mapDatabaseImages } from "@/utils/helpers";
 import clsx from "clsx";
 
 import BlogCard from "@/components/blogs/BlogCard";
@@ -11,6 +11,7 @@ export default function BlogsPage() {
   const [blogs, setBlogs] = useState([]);
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     findAuthor: "",
     findSearch: "",
@@ -51,16 +52,15 @@ export default function BlogsPage() {
       }
 
       const result = await response.json();
-      console.log(result);
-      const processedBlogs = result.data.map((blog) => mapDatabaseImages(blog));
 
-      const sortedBlogs = sortArrayByField(processedBlogs, "updated_at", true);
-
-      setBlogs(sortedBlogs);
+      // The backend already orders by updated_at DESC. Re-sorting here would
+      // only ever reorder the current page's slice, never across pages.
+      setBlogs(result.data.map((blog) => mapDatabaseImages(blog)));
       setMaxPage(result.meta.totalPages);
+      setError(null);
     } catch (err) {
-      console.log(err);
-      setPage(1);
+      console.error(err);
+      setError(err.message || "Could not load blogs");
     }
   }
 
@@ -84,21 +84,46 @@ export default function BlogsPage() {
     getBlogs();
   }, [filters, page]);
 
+  // Any filter change invalidates the current page number: filtering while on
+  // page 5 would otherwise request page 5 of a possibly 1-page result and show
+  // nothing. React batches these, so it stays a single render and one fetch.
+  function updateFilters(next) {
+    setFilters(next);
+    setPage(1);
+  }
+
   return (
     <main className="flex flex-col space-y-6 mx-auto max-w-[960px]">
-      <div>HEJ!</div>
-
       <BlogBar />
-      <BlogFilter filters={filters} setFilters={setFilters} />
+      <BlogFilter filters={filters} setFilters={updateFilters} />
 
       <BlogPagination page={page} setPage={setPage} maxPage={maxPage} />
 
-      <Blogs blogs={blogs} getBlogs={getBlogs} deleteBlog={deleteBlog} />
+      <Blogs
+        blogs={blogs}
+        error={error}
+        getBlogs={getBlogs}
+        deleteBlog={deleteBlog}
+      />
     </main>
   );
 }
 
-function Blogs({ blogs, getBlogs, deleteBlog }) {
+function Blogs({ blogs, error, getBlogs, deleteBlog }) {
+  if (error) {
+    return (
+      <div className="mx-auto w-11/12 space-y-3 text-primary">
+        <p className="text-secondary-r">Could not load blogs: {error}</p>
+        <button
+          onClick={getBlogs}
+          className="bg-secondary-t text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-start flex-wrap gap-4 mx-auto w-11/12">
       {blogs.length ? (
@@ -111,7 +136,7 @@ function Blogs({ blogs, getBlogs, deleteBlog }) {
           />
         ))
       ) : (
-        <p>Can't find blog</p>
+        <p className="text-primary">No blogs match these filters.</p>
       )}
     </div>
   );
@@ -135,6 +160,8 @@ function BlogBar() {
 }
 
 function BlogFilter({ filters = {}, setFilters }) {
+  // Subcategories only exist under "knowledge", so the two selects are coupled:
+  // picking a subcategory implies that category, and leaving it clears them.
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -232,6 +259,7 @@ function BlogFilter({ filters = {}, setFilters }) {
           <option value="">- Select Status -</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
+          <option value="archived">Archived</option>
         </select>
       </div>
 
