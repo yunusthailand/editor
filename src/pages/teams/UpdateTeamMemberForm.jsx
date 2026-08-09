@@ -6,6 +6,7 @@ import Divider from "@/components/ui/Divider";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import SelectInput from "@/components/form/SelectInput";
+import FileInput from "@/components/form/FileInput";
 import { Button } from "@/components/ui/button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusMessage from "@/components/ui/StatusMessage";
@@ -193,12 +194,7 @@ export default function UpdateTeamMemberForm() {
         {loading && <p>Loading...</p>}
         {error && <p className="text-danger">{error}</p>}
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleChange}
-          name="image"
-        />
+        <FileInput label="Team Image" onChange={handleChange} />
         {imagePreview && (
           <div className="w-[120px] h-[120px] border rounded overflow-hidden">
             <img

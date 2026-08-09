@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
 import Divider from "@/components/ui/Divider";
+import FileInput from "@/components/form/FileInput";
 import { Button } from "@/components/ui/button";
 import StatusMessage from "@/components/ui/StatusMessage";
 
@@ -84,10 +85,7 @@ export default function CreateTeamMemberForm() {
         onSubmit={handleSubmit}
         className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
-        <div className="space-y-2">
-          <label className="font-medium">Team Image</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-        </div>
+        <FileInput label="Team Image" onChange={handleFileChange} />
         {imagePreview && (
           <div className="mt-4 w-[120px] h-[120px] border rounded overflow-hidden">
             <img

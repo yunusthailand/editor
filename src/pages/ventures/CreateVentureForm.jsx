@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Divider from "@/components/ui/Divider";
+import FileInput from "@/components/form/FileInput";
 import { Button } from "@/components/ui/button";
 import StatusMessage from "@/components/ui/StatusMessage";
 
@@ -79,7 +80,7 @@ export default function CreateVentureForm() {
         onSubmit={handleSubmit}
         className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <FileInput label="Venture Image" onChange={handleFileChange} />
         {imagePreview && (
           <div className="mt-4 w-[120px] h-[120px] border rounded overflow-hidden">
             <img
