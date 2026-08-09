@@ -17,6 +17,11 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
+import Separator from "@/components/ui/separator";
+
+// One control style shared by the search box and every filter select.
+const FILTER_CONTROL =
+  "h-9 rounded-control border border-primary/30 bg-white px-3 text-xs text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40";
 
 const PAGE_SIZE = 8;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -213,7 +218,7 @@ function Blogs({
   return (
     <div
       className={clsx(
-        "flex justify-start flex-wrap gap-4 mx-auto w-11/12 transition-opacity",
+        "rounded-card bg-primary/5 p-6 transition-opacity",
         isFetching && "opacity-50",
       )}
     >
@@ -222,14 +227,16 @@ function Blogs({
           <Spinner />
         </div>
       )}
-      {blogs.map((blog) => (
-        <BlogCard
-          key={blog.id}
-          blog={blog}
-          getBlogs={refetchBlogs}
-          deleteBlog={() => deleteBlog(blog.id)}
-        />
-      ))}
+      <div className="flex flex-wrap justify-start gap-4">
+        {blogs.map((blog) => (
+          <BlogCard
+            key={blog.id}
+            blog={blog}
+            getBlogs={refetchBlogs}
+            deleteBlog={() => deleteBlog(blog.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -291,110 +298,157 @@ function BlogFilter({
   };
 
   return (
-    <section className="flex flex-col items-stretch justify-between gap-y-6">
-      <div className="flex flex-wrap gap-3 text-xs text-primary">
-        <input
-          type="text"
-          name="findSearch"
-          value={searchInput}
-          placeholder="Search..."
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        />
+    <section className="rounded-card border bg-white shadow-card p-4 space-y-4 text-xs text-primary">
+      {/* Search + sort, with reset anchored right */}
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Search" className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            name="findSearch"
+            value={searchInput}
+            placeholder="Search titles..."
+            onChange={(e) => setSearchInput(e.target.value)}
+            className={clsx(FILTER_CONTROL, "w-full")}
+          />
+        </Field>
 
-        <select
-          name="sort"
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value)}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.key} value={opt.key}>
-              Sort: {opt.label}
-            </option>
-          ))}
-        </select>
+        <Field label="Sort by">
+          <select
+            name="sort"
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value)}
+            className={FILTER_CONTROL}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.key} value={opt.key}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </Field>
 
-        <select
-          name="findAuthor"
-          value={filters.findAuthor}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Author -</option>
-          {members.map((member) => (
-            <option key={member.id} value={member.id}>
-              {member.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          name="findCategory"
-          value={filters.findCategory}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Category -</option>
-          <option value="perspectives">Perspectives</option>
-          <option value="knowledge">Knowledge</option>
-        </select>
-
-        <select
-          name="findSubcategory"
-          value={filters.findSubcategory}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Subcategory -</option>
-          <option value="publication">Publication</option>
-          <option value="press-release">Press Release</option>
-          <option value="case-studies">Case Studies</option>
-          <option value="toolkit">Toolkit</option>
-          <option value="videos">Videos</option>
-        </select>
-
-        <select
-          name="findStarred"
-          value={filters.findStarred}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Starred -</option>
-          <option value="true">Starred</option>
-          <option value="false">Not Starred</option>
-        </select>
-
-        <select
-          name="findRecent"
-          value={filters.findRecent}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Recent -</option>
-          <option value="true">Recent</option>
-          <option value="false">Not Recent</option>
-        </select>
-
-        <select
-          name="findStatus"
-          value={filters.findStatus}
-          onChange={handleChange}
-          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-        >
-          <option value="">- Select Status -</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div className="flex justify-end">
-        <Button variant="destructive" onClick={onReset}>
-          Reset Filters
+        <Button variant="outline" size="sm" onClick={onReset} className="ml-auto">
+          Reset filters
         </Button>
       </div>
+
+      <Separator />
+
+      {/* What the post is */}
+      <FilterGroup label="Content">
+        <Field label="Author">
+          <select
+            name="findAuthor"
+            value={filters.findAuthor}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">All authors</option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Category">
+          <select
+            name="findCategory"
+            value={filters.findCategory}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">All categories</option>
+            <option value="perspectives">Perspectives</option>
+            <option value="knowledge">Knowledge</option>
+          </select>
+        </Field>
+
+        <Field label="Subcategory">
+          <select
+            name="findSubcategory"
+            value={filters.findSubcategory}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">All subcategories</option>
+            <option value="publication">Publication</option>
+            <option value="press-release">Press Release</option>
+            <option value="case-studies">Case Studies</option>
+            <option value="toolkit">Toolkit</option>
+            <option value="videos">Videos</option>
+          </select>
+        </Field>
+      </FilterGroup>
+
+      <Separator />
+
+      {/* Editorial state */}
+      <FilterGroup label="Status">
+        <Field label="Starred">
+          <select
+            name="findStarred"
+            value={filters.findStarred}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">Any</option>
+            <option value="true">Starred</option>
+            <option value="false">Not starred</option>
+          </select>
+        </Field>
+
+        <Field label="Recent">
+          <select
+            name="findRecent"
+            value={filters.findRecent}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">Any</option>
+            <option value="true">Recent</option>
+            <option value="false">Not recent</option>
+          </select>
+        </Field>
+
+        <Field label="Publish status">
+          <select
+            name="findStatus"
+            value={filters.findStatus}
+            onChange={handleChange}
+            className={FILTER_CONTROL}
+          >
+            <option value="">Any</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </Field>
+      </FilterGroup>
     </section>
+  );
+}
+
+// A titled cluster of filters — the visual segmentation.
+function FilterGroup({ label, children }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-primary/50">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-3">{children}</div>
+    </div>
+  );
+}
+
+// A single labelled control.
+function Field({ label, className, children }) {
+  return (
+    <div className={clsx("flex flex-col gap-1", className)}>
+      <label className="text-[11px] text-primary/70">{label}</label>
+      {children}
+    </div>
   );
 }
 

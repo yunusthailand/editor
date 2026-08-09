@@ -7,8 +7,12 @@ import { FaStar, FaRegStar } from "react-icons/fa";
 import { MdUpdate, MdHistory } from "react-icons/md";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
+const CARD_SELECT =
+  "h-8 flex-1 rounded-control border border-primary/30 bg-white px-2 text-xs text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40";
 
 export default function BlogCard({ blog, getBlogs, deleteBlog }) {
   const navigate = useNavigate();
@@ -48,93 +52,30 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl justify-between w-52 p-4 text-primary flex flex-col gap-4 relative">
+    <Card className="w-52 p-4 flex flex-col gap-3 relative">
       {/* confirmation modal */}
       {showConfirm && (
-        <div className="absolute inset-0 bg-black/50 flex justify-center items-center rounded-2xl z-10">
-          <div className="bg-white p-4 rounded-lg text-center space-y-4 w-40">
-            <p className="text-sm">Are you sure?</p>
+        <div className="absolute inset-0 bg-white/95 flex flex-col justify-center items-center gap-4 rounded-card z-10">
+          <p className="text-sm">Delete this blog?</p>
 
-            <div className="flex justify-center text-sm gap-2">
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                Delete
-              </Button>
+          <div className="flex justify-center gap-2">
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              Delete
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowConfirm(false)}
-              >
-                Cancel
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfirm(false)}
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       )}
 
-      {/* status */}
-      <div className="text-xs">
-        <label htmlFor={`status-${blog.id}`} className="mr-2">
-          Status:
-        </label>
-
-        <select
-          id={`status-${blog.id}`}
-          value={blog.status}
-          onChange={(e) => changeStatus("status", e.target.value)}
-          className="border p-1 rounded"
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      {/* icons */}
-      <div className="flex gap-4 text-xs items-center justify-between">
-        {/* starred */}
-        <div className="flex gap-1 items-center">
-          <p>Starred</p>
-
-          <motion.div
-            key={blog.starred ? "on" : "off"}
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2 }}
-            className="cursor-pointer"
-            onClick={() => changeStatus("starred")}
-          >
-            {blog.starred ? (
-              <FaStar className="text-yellow-500" />
-            ) : (
-              <FaRegStar className="text-gray-400" />
-            )}
-          </motion.div>
-        </div>
-
-        {/* recent */}
-        <div className="flex gap-1 items-center">
-          <p>Recent</p>
-
-          <motion.div
-            key={blog.recent ? "recent" : "old"}
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2 }}
-            className="cursor-pointer"
-            onClick={() => changeStatus("recent")}
-          >
-            {blog.recent ? (
-              <MdUpdate className="text-green-600" />
-            ) : (
-              <MdHistory className="text-gray-400" />
-            )}
-          </motion.div>
-        </div>
-      </div>
-
       {/* image */}
-      <div className="relative rounded-2xl overflow-hidden">
+      <div className="relative rounded-control overflow-hidden">
         <img
           src={blog.metadata.headerPicture}
           alt={blog.metadata.title}
@@ -143,11 +84,78 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
       </div>
 
       {/* title */}
-      <p className="text-xs line-clamp-2">{blog.metadata.title}</p>
+      <p className="text-xs font-medium line-clamp-2 min-h-[2rem]">
+        {blog.metadata.title}
+      </p>
+
+      {/* status */}
+      <div className="flex items-center gap-2 text-xs">
+        <label htmlFor={`status-${blog.id}`} className="text-primary/60">
+          Status
+        </label>
+        <select
+          id={`status-${blog.id}`}
+          value={blog.status}
+          onChange={(e) => changeStatus("status", e.target.value)}
+          className={CARD_SELECT}
+        >
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      {/* toggles */}
+      <div className="flex gap-4 text-xs items-center justify-between">
+        <div className="flex gap-1 items-center">
+          <span className="text-primary/60">Starred</span>
+          <motion.button
+            type="button"
+            key={blog.starred ? "on" : "off"}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="cursor-pointer"
+            onClick={() => changeStatus("starred")}
+            aria-label="Toggle starred"
+          >
+            {blog.starred ? (
+              <FaStar className="text-secondary-y" />
+            ) : (
+              <FaRegStar className="text-primary/30" />
+            )}
+          </motion.button>
+        </div>
+
+        <div className="flex gap-1 items-center">
+          <span className="text-primary/60">Recent</span>
+          <motion.button
+            type="button"
+            key={blog.recent ? "recent" : "old"}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="cursor-pointer"
+            onClick={() => changeStatus("recent")}
+            aria-label="Toggle recent"
+          >
+            {blog.recent ? (
+              <MdUpdate className="text-secondary" />
+            ) : (
+              <MdHistory className="text-primary/30" />
+            )}
+          </motion.button>
+        </div>
+      </div>
 
       {/* actions */}
-      <div className="flex gap-2 text-xs">
-        <Button variant="outline" size="sm" onClick={handleEdit}>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleEdit}
+          className="flex-1"
+        >
           Edit
         </Button>
 
@@ -155,10 +163,11 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
           variant="destructive"
           size="sm"
           onClick={() => setShowConfirm(true)}
+          className="flex-1"
         >
           Delete
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

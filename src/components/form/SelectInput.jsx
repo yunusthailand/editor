@@ -19,7 +19,7 @@ export default function SelectInput({
         name={name}
         value={value}
         onChange={onChange}
-        className="flex h-9 w-full rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+        className="flex h-9 w-full rounded-control border border-primary/30 bg-white px-3 text-xs text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (

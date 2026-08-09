@@ -42,8 +42,8 @@ export default function EditPanel({
   }
 
   return (
-    <aside className="sticky top-4 self-start text-xs max-h-[90vh] w-[360px] overflow-y-auto rounded-3xl p-6 bg-secondary-t shadow-xl space-y-6">
-      <div className="space-y-5 bg-white/5 p-4 rounded-2xl">
+    <aside className="thin-scrollbar sticky top-4 self-start text-xs max-h-[90vh] w-[360px] overflow-y-auto rounded-card p-4 bg-secondary-t shadow-xl space-y-4">
+      <div className="space-y-3 bg-white/5 p-3 rounded-card">
         <TitleInput
           title={title}
           setTitle={setTitle}
@@ -64,19 +64,19 @@ export default function EditPanel({
         {category === "perspectives" && (
           <MemberInput author={author} setAuthor={setAuthor} />
         )}
-        <div className="flex flex-col space-y-2">
-          <p className="text-white text-sm">Created At</p>
+        <div className="flex flex-col space-y-1.5">
+          <p className="text-white/80 text-xs">Created At</p>
           <input
             type="date"
             value={createdAt}
             onChange={(e) => setCreatedAt(e.target.value)}
-            className="bg-white border rounded p-2"
+            className="bg-white border rounded-control p-2"
           />
         </div>
       </div>
 
-      <div className="space-y-4 bg-white/5 p-4 rounded-2xl">
-        <h2 className="text-white font-bold text-sm uppercase tracking-widest text-center">
+      <div className="space-y-3 bg-white/5 p-3 rounded-card">
+        <h2 className="text-white/90 font-medium text-[11px] uppercase tracking-widest text-center">
           Blog Elements
         </h2>
         <div className="space-y-3">
@@ -93,15 +93,15 @@ export default function EditPanel({
         </div>
       </div>
 
-      <div className="space-y-3 bg-white/5 p-4 rounded-2xl">
-        <h2 className="text-white font-bold text-sm uppercase tracking-widest text-center">
+      <div className="space-y-3 bg-white/5 p-3 rounded-card">
+        <h2 className="text-white/90 font-medium text-[11px] uppercase tracking-widest text-center">
           Add New Element
         </h2>
         <div className="flex gap-2">
           <select
             value={selectedEditor}
             onChange={(e) => setSelectedEditor(e.target.value)}
-            className="w-full rounded border p-2 bg-white text-black text-xs"
+            className="w-full rounded-control border p-2 bg-white text-black text-xs"
           >
             <option value="">-- Select a component --</option>
             {eleOptions.map((ele) => (

@@ -7,7 +7,6 @@ import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import SelectInput from "@/components/form/SelectInput";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusMessage from "@/components/ui/StatusMessage";
 
@@ -188,7 +187,7 @@ export default function UpdateTeamMemberForm() {
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">
       <form
         onSubmit={handleSubmit}
-        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs w-[420px]"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs w-[480px]"
       >
         <h2 className="text-2xl font-light">Edit Team Member</h2>
         {loading && <p>Loading...</p>}
@@ -288,7 +287,12 @@ export default function UpdateTeamMemberForm() {
       <div className="max-w-[666px] space-y-4">
         <p className="text-xl font-light">Select Member</p>
         <section className="flex gap-4 flex-wrap">
-          {members.map((member) => (
+          {/* Placeholder authors (is-guest, e.g. "Yunus Team") are kept out of
+              the management list — they aren't real people to edit or delete —
+              but stay in `members` so they remain a reassign target below. */}
+          {members
+            .filter((member) => member["is-guest"] !== true)
+            .map((member) => (
             <div
               key={member.id}
               className="flex items-center gap-2 bg-white p-3 rounded-full border"
@@ -303,7 +307,6 @@ export default function UpdateTeamMemberForm() {
                   className="size-8 rounded-full object-cover"
                 />
                 <span className="text-xs">{member.name}</span>
-                {member["is-guest"] === true && <Badge variant="muted">hidden</Badge>}
               </button>
               <Button
                 variant="destructive"

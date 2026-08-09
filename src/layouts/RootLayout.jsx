@@ -3,16 +3,17 @@ import { Outlet, NavLink } from "react-router-dom";
 import clsx from "clsx";
 
 export default function RootLayout() {
-  // "editor" included so the blog editor is reachable from the nav; NavLink
-  // also marks it active on /editor/:blogId, which is what we want.
-  const links = ["blogs", "teams", "ventures", "programs", "editor"];
+  // The blog editor is intentionally absent from the nav — it's reached only
+  // via "+ Create New Blog" (new) or a card's Edit (existing).
+  const links = ["blogs", "teams", "ventures", "programs"];
 
   return (
     <div className="min-h-screen bg-background text-primary">
-      {/* Navbar */}
+      {/* Navbar — teal bar spans the full viewport, links stay centered in a
+          max-width container so they line up with the page content below. */}
 
-      <nav className="pt-8 max-w-screen-lg rounded-card overflow-hidden mx-auto">
-        <ol className="flex gap-4 bg-secondary text-white p-8 justify-center">
+      <nav className="bg-secondary text-white">
+        <ol className="flex gap-4 p-6 justify-center max-w-screen-lg mx-auto">
           {links.map((link) => (
             <li key={link}>
               <NavLink

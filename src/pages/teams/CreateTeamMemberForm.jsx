@@ -78,7 +78,7 @@ export default function CreateTeamMemberForm() {
   }
 
   return (
-    <div className="max-w-96 mx-auto">
+    <div className="max-w-lg mx-auto">
       <form
         ref={formRef}
         onSubmit={handleSubmit}

@@ -18,3 +18,23 @@ body {
 .fade-in {
   @apply opacity-0 animate-fadeIn;
 }
+
+/* Thin, unobtrusive scrollbar for the editor's side panel — the default
+   chunky OS scrollbar looked out of place against the rounded teal panel. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.35) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.35);
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.55);
+}

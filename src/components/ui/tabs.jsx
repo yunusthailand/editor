@@ -32,7 +32,12 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 const TabsContent = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
-    className={cn("focus-visible:outline-none", className)}
+    className={cn(
+      // Radix only mounts the active panel, so an enter animation on the
+      // incoming content softens the create↔edit switch instead of it snapping.
+      "focus-visible:outline-none data-[state=active]:animate-in data-[state=active]:fade-in-50 data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300",
+      className,
+    )}
     {...props}
   />
 ));
