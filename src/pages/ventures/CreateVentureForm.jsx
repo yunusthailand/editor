@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Divider from "@/components/ui/Divider";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
 const EMPTY_FORM = {
   title: "",
@@ -75,7 +77,7 @@ export default function CreateVentureForm() {
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
         <input type="file" accept="image/*" onChange={handleFileChange} />
         {imagePreview && (
@@ -143,14 +145,10 @@ export default function CreateVentureForm() {
           onChange={handleChange}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Venture"}
-        </button>
-        {message && <p className="text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );

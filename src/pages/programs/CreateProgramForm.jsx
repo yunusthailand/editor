@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 import FileInput from "@/components/form/FileInput";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
@@ -77,7 +79,7 @@ export default function CreateProgramForm() {
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-2 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-2 bg-white border shadow-card text-xs"
       >
         <FileInput onChange={handleChange} name="image" />
         {imagePreview && (
@@ -141,14 +143,10 @@ export default function CreateProgramForm() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Program"}
-        </button>
-        {message && <p className="mt-4 text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );

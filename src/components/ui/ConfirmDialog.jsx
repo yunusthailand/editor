@@ -1,8 +1,19 @@
-import Button from "./Button";
+import { Button } from "./button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "./dialog";
 
-// `children` is the extension point: a caller that needs to collect something
+// Built on the shadcn dialog (Radix): focus trap, Esc-to-close and scroll lock
+// come for free. The parent mounts this only when it wants it open, so `open`
+// is always true; closing routes through onCancel unless a request is in
+// flight. `children` is the extension point — a caller collecting something
 // before confirming (e.g. who to reassign a member's posts to) renders it in
-// the body rather than building a bespoke modal.
+// the body.
 export default function ConfirmDialog({
   title,
   message,
@@ -16,29 +27,35 @@ export default function ConfirmDialog({
   children,
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-card p-6 space-y-4 text-xs w-[420px] shadow-card">
-        <h3 className="text-lg font-light">{title}</h3>
-
-        {message && <p>{message}</p>}
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next && !busy) onCancel();
+      }}
+    >
+      <DialogContent className="text-xs">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {message && <DialogDescription>{message}</DialogDescription>}
+        </DialogHeader>
 
         {children}
 
         {error && <p className="text-danger">{error}</p>}
 
-        <div className="flex justify-end gap-2 pt-2">
+        <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </Button>
           <Button
-            variant={danger ? "danger" : "primary"}
+            variant={danger ? "destructive" : "default"}
             onClick={onConfirm}
             loading={busy}
           >
             {busy ? "Working..." : confirmLabel}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

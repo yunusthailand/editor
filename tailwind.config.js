@@ -1,3 +1,5 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -57,5 +59,8 @@ export default {
     },
   },
 
-  plugins: [],
+  // tailwindcss-animate supplies the enter/exit utilities
+  // (data-[state=open]:animate-in etc.) that the Radix-based dialog and select
+  // components use for their open/close transitions.
+  plugins: [tailwindcssAnimate],
 };

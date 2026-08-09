@@ -6,6 +6,7 @@ import TextArea from "@/components/form/TextArea";
 import NumberInput from "@/components/form/NumberInput";
 import FileInput from "@/components/form/FileInput";
 import Divider from "@/components/ui/Divider";
+import { Button } from "@/components/ui/button";
 
 const PROGRAMS_KEY = ["programs"];
 
@@ -129,7 +130,7 @@ export default function UpdateProgramForm() {
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">
       <form
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-2 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-2 bg-white border shadow-card text-xs"
       >
         {loading && <p className="text-gray-500">Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
@@ -204,13 +205,9 @@ export default function UpdateProgramForm() {
           name="no"
         />
 
-        <button
-          type="submit"
-          className="p-2 bg-secondary-t text-white rounded"
-          disabled={loading}
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Updating..." : "Update Program"}
-        </button>
+        </Button>
       </form>
 
       <Programs
@@ -259,28 +256,28 @@ function Programs({
               onClick={() => setProgramId(program.id)}
             >
               {showConfirmId === program.id && (
-                <div className="text-white absolute inset-0 flex justify-center items-center rounded-2xl z-10">
-                  <div className="bg-secondary-t p-4 rounded-lg text-center space-x-4 w-full">
-                    <div className="flex justify-center text-sm gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(program.id);
-                        }}
-                        className="bg-secondary-r px-2 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowConfirmId(null);
-                        }}
-                        className="border px-2 py-1 rounded"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                <div className="absolute inset-0 flex justify-center items-center rounded-card bg-white/95 border shadow-card z-10">
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(program.id);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConfirmId(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               )}
@@ -292,15 +289,16 @@ function Programs({
                 />
               </div>
               <p className="text-xs mr-2">{program.title}</p>
-              <button
-                className="bg-secondary-r p-2 rounded-full text-xs text-white"
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowConfirmId(program.id);
                 }}
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ))
         ) : (

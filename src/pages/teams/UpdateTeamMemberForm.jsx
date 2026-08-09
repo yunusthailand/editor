@@ -6,7 +6,8 @@ import Divider from "@/components/ui/Divider";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import SelectInput from "@/components/form/SelectInput";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusMessage from "@/components/ui/StatusMessage";
 
@@ -187,11 +188,11 @@ export default function UpdateTeamMemberForm() {
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">
       <form
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs w-[420px]"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs w-[420px]"
       >
         <h2 className="text-2xl font-light">Edit Team Member</h2>
         {loading && <p>Loading...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-danger">{error}</p>}
 
         <input
           type="file"
@@ -302,14 +303,10 @@ export default function UpdateTeamMemberForm() {
                   className="size-8 rounded-full object-cover"
                 />
                 <span className="text-xs">{member.name}</span>
-                {member["is-guest"] === true && (
-                  <span className="text-[10px] uppercase tracking-wide text-gray-400">
-                    hidden
-                  </span>
-                )}
+                {member["is-guest"] === true && <Badge variant="muted">hidden</Badge>}
               </button>
               <Button
-                variant="danger"
+                variant="destructive"
                 size="sm"
                 onClick={() => requestDelete(member)}
               >
@@ -346,7 +343,7 @@ export default function UpdateTeamMemberForm() {
                     reassignTo: e.target.value,
                   }))
                 }
-                className="w-full border rounded-control p-2"
+                className="h-9 w-full rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
               >
                 <option value="">-- Select a member --</option>
                 {members

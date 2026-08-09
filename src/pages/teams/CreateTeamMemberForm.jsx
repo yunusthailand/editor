@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
 import Divider from "@/components/ui/Divider";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
 const EMPTY_FORM = {
   name: "",
@@ -80,7 +82,7 @@ export default function CreateTeamMemberForm() {
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
         <div className="space-y-2">
           <label className="font-medium">Team Image</label>
@@ -157,14 +159,10 @@ export default function CreateTeamMemberForm() {
           </span>
         </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Team Member"}
-        </button>
-        {message && <p className="text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );

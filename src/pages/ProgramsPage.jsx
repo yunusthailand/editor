@@ -1,29 +1,32 @@
 import { useState } from "react";
 
 import PageHeader from "@/components/ui/PageHeader";
-import TabBar from "@/components/ui/TabBar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import CreateProgramForm from "./programs/CreateProgramForm";
 import UpdateProgramForm from "./programs/UpdateProgramForm";
-
-const TABS = [
-  { value: "create", label: "Create New Program" },
-  { value: "update", label: "Edit Program Details" },
-];
 
 export default function ProgramsPage() {
   const [mode, setMode] = useState("create");
 
   return (
-    <main className="min-h-screen py-16 space-y-8">
-      <nav className="flex flex-col pb-8 space-y-8 max-w-[960px] mx-auto items-center">
-        <PageHeader title="Programs" />
-        <TabBar tabs={TABS} value={mode} onChange={setMode} />
-      </nav>
+    <Tabs value={mode} onValueChange={setMode} asChild>
+      <div className="space-y-8">
+        <div className="flex flex-col space-y-8 max-w-[960px] mx-auto items-center">
+          <PageHeader title="Programs" />
+          <TabsList>
+            <TabsTrigger value="create">Create New Program</TabsTrigger>
+            <TabsTrigger value="update">Edit Program Details</TabsTrigger>
+          </TabsList>
+        </div>
 
-      {mode === "create" && <CreateProgramForm />}
-
-      {mode === "update" && <UpdateProgramForm />}
-    </main>
+        <TabsContent value="create">
+          <CreateProgramForm />
+        </TabsContent>
+        <TabsContent value="update">
+          <UpdateProgramForm />
+        </TabsContent>
+      </div>
+    </Tabs>
   );
 }

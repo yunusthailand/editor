@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { FaStar, FaRegStar } from "react-icons/fa";
 import { MdUpdate, MdHistory } from "react-icons/md";
 
+import { Button } from "@/components/ui/button";
+
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 export default function BlogCard({ blog, getBlogs, deleteBlog }) {
@@ -54,19 +56,17 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
             <p className="text-sm">Are you sure?</p>
 
             <div className="flex justify-center text-sm gap-2">
-              <button
-                onClick={handleDelete}
-                className="bg-secondary-r text-white px-2 py-1 rounded"
-              >
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
                 Delete
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowConfirm(false)}
-                className="border px-2 py-1 rounded"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -146,17 +146,18 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
       <p className="text-xs line-clamp-2">{blog.metadata.title}</p>
 
       {/* actions */}
-      <div className="flex gap-4 text-xs">
-        <button onClick={handleEdit} className="rounded-lg border p-2 bg-white">
+      <div className="flex gap-2 text-xs">
+        <Button variant="outline" size="sm" onClick={handleEdit}>
           Edit
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="destructive"
+          size="sm"
           onClick={() => setShowConfirm(true)}
-          className="bg-secondary-r text-white rounded-lg border p-2"
         >
           Delete
-        </button>
+        </Button>
       </div>
     </div>
   );

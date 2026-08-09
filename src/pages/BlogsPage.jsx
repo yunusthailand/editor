@@ -12,7 +12,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import clsx from "clsx";
 
 import BlogCard from "@/components/blogs/BlogCard";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import Pagination from "@/components/ui/Pagination";
@@ -143,7 +143,7 @@ export default function BlogsPage() {
   }
 
   return (
-    <main className="flex flex-col space-y-6 mx-auto max-w-[960px]">
+    <div className="flex flex-col space-y-6 mx-auto max-w-[960px]">
       <BlogBar />
 
       <BlogFilter
@@ -175,7 +175,7 @@ export default function BlogsPage() {
         refetchBlogs={refetchBlogs}
         deleteBlog={(id) => deleteBlog.mutate(id)}
       />
-    </main>
+    </div>
   );
 }
 
@@ -299,14 +299,14 @@ function BlogFilter({
           value={searchInput}
           placeholder="Search..."
           onChange={(e) => setSearchInput(e.target.value)}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         />
 
         <select
           name="sort"
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value)}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.key} value={opt.key}>
@@ -319,7 +319,7 @@ function BlogFilter({
           name="findAuthor"
           value={filters.findAuthor}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Author -</option>
           {members.map((member) => (
@@ -333,7 +333,7 @@ function BlogFilter({
           name="findCategory"
           value={filters.findCategory}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Category -</option>
           <option value="perspectives">Perspectives</option>
@@ -344,7 +344,7 @@ function BlogFilter({
           name="findSubcategory"
           value={filters.findSubcategory}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Subcategory -</option>
           <option value="publication">Publication</option>
@@ -358,7 +358,7 @@ function BlogFilter({
           name="findStarred"
           value={filters.findStarred}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Starred -</option>
           <option value="true">Starred</option>
@@ -369,7 +369,7 @@ function BlogFilter({
           name="findRecent"
           value={filters.findRecent}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Recent -</option>
           <option value="true">Recent</option>
@@ -380,7 +380,7 @@ function BlogFilter({
           name="findStatus"
           value={filters.findStatus}
           onChange={handleChange}
-          className="border p-2 rounded-lg"
+          className="h-9 rounded-control border border-primary/30 bg-white px-3 text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
         >
           <option value="">- Select Status -</option>
           <option value="draft">Draft</option>
@@ -390,7 +390,7 @@ function BlogFilter({
       </div>
 
       <div className="flex justify-end">
-        <Button variant="danger" onClick={onReset}>
+        <Button variant="destructive" onClick={onReset}>
           Reset Filters
         </Button>
       </div>
