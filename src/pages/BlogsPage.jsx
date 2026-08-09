@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { mapDatabaseImages } from "@/utils/helpers";
+import { apiFetch } from "@/lib/api";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import clsx from "clsx";
 
 import BlogCard from "@/components/blogs/BlogCard";
@@ -9,8 +17,6 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
-
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 const PAGE_SIZE = 8;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -36,13 +42,42 @@ const EMPTY_FILTERS = {
   findStatus: "",
 };
 
+function buildBlogParams({ filters, page, sortKey }) {
+  const query = new URLSearchParams();
+  const activeSort =
+    SORT_OPTIONS.find((opt) => opt.key === sortKey) ?? SORT_OPTIONS[0];
+
+  query.append("page", page);
+  query.append("limit", PAGE_SIZE);
+  query.append("sort", activeSort.sort);
+  query.append("order", activeSort.order);
+
+  if (filters.findAuthor) query.append("author", filters.findAuthor);
+  if (filters.findSearch) query.append("search", filters.findSearch);
+  if (filters.findStarred !== "") query.append("starred", filters.findStarred);
+  if (filters.findRecent !== "") query.append("recent", filters.findRecent);
+  if (filters.findCategory) query.append("category", filters.findCategory);
+  if (filters.findSubcategory)
+    query.append("subcategory", filters.findSubcategory);
+  if (filters.findStatus) query.append("status", filters.findStatus);
+
+  return query.toString();
+}
+
+// The backend already applies the sort; re-sorting here could only ever
+// reorder the current page's slice.
+async function fetchBlogs({ filters, page, sortKey }) {
+  const result = await apiFetch(`/blog?${buildBlogParams({ filters, page, sortKey })}`);
+
+  return {
+    blogs: result.data.map((blog) => mapDatabaseImages(blog)),
+    maxPage: result.meta.totalPages,
+    totalItems: result.meta.totalItems,
+  };
+}
+
 export default function BlogsPage() {
-  const [blogs, setBlogs] = useState([]);
   const [page, setPage] = useState(1);
-  const [maxPage, setMaxPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [status, setStatus] = useState("loading");
-  const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState("updated_desc");
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
@@ -50,88 +85,30 @@ export default function BlogsPage() {
   // in `filters` is what actually triggers a fetch.
   const [searchInput, setSearchInput] = useState("");
 
-  // Debounced search plus fast filter clicks means responses can arrive out of
-  // order. Only the newest request is allowed to write to state.
-  const requestId = useRef(0);
+  const queryClient = useQueryClient();
 
-  async function getBlogs() {
-    const id = ++requestId.current;
+  // The query key is the full request identity — filters, page and sort. React
+  // Query dedupes, caches per key, and (with keepPreviousData) keeps the last
+  // page on screen while the next loads. That replaces the manual requestId
+  // race guard: a stale response can no longer overwrite a newer one, because
+  // each key owns its own cache entry.
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
+    queryKey: ["blogs", filters, page, sortKey],
+    queryFn: () => fetchBlogs({ filters, page, sortKey }),
+    placeholderData: keepPreviousData,
+  });
 
-    setStatus("loading");
+  const blogs = data?.blogs ?? [];
+  const maxPage = data?.maxPage ?? 1;
+  const totalItems = data?.totalItems ?? 0;
 
-    try {
-      const query = new URLSearchParams();
-      const activeSort =
-        SORT_OPTIONS.find((opt) => opt.key === sortKey) ?? SORT_OPTIONS[0];
+  const refetchBlogs = () =>
+    queryClient.invalidateQueries({ queryKey: ["blogs"] });
 
-      query.append("page", page);
-      query.append("limit", PAGE_SIZE);
-      query.append("sort", activeSort.sort);
-      query.append("order", activeSort.order);
-
-      if (filters.findAuthor) query.append("author", filters.findAuthor);
-
-      if (filters.findSearch) query.append("search", filters.findSearch);
-
-      if (filters.findStarred !== "")
-        query.append("starred", filters.findStarred);
-
-      if (filters.findRecent !== "") query.append("recent", filters.findRecent);
-
-      if (filters.findCategory) query.append("category", filters.findCategory);
-
-      if (filters.findSubcategory)
-        query.append("subcategory", filters.findSubcategory);
-
-      if (filters.findStatus) query.append("status", filters.findStatus);
-
-      const response = await fetch(`${apiUrl}/blog?${query.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ERROR ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (id !== requestId.current) return;
-
-      // The backend already applies the sort; re-sorting here could only ever
-      // reorder the current page's slice.
-      setBlogs(result.data.map((blog) => mapDatabaseImages(blog)));
-      setMaxPage(result.meta.totalPages);
-      setTotalItems(result.meta.totalItems);
-      setError(null);
-      setStatus("success");
-    } catch (err) {
-      if (id !== requestId.current) return;
-
-      console.error(err);
-      setError(err.message || "Could not load blogs");
-      setStatus("error");
-    }
-  }
-
-  async function deleteBlog(id) {
-    try {
-      const res = await fetch(`${apiUrl}/blog/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete blog");
-      }
-
-      getBlogs();
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Could not delete blog");
-      setStatus("error");
-    }
-  }
-
-  useEffect(() => {
-    getBlogs();
-  }, [filters, page, sortKey]);
+  const deleteBlog = useMutation({
+    mutationFn: (id) => apiFetch(`/blog/${id}`, { method: "DELETE" }),
+    onSuccess: refetchBlogs,
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -190,27 +167,41 @@ export default function BlogsPage() {
 
       <Blogs
         blogs={blogs}
-        status={status}
-        error={error}
-        getBlogs={getBlogs}
-        deleteBlog={deleteBlog}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isError={isError}
+        error={error?.message}
+        onRetry={refetch}
+        refetchBlogs={refetchBlogs}
+        deleteBlog={(id) => deleteBlog.mutate(id)}
       />
     </main>
   );
 }
 
-function Blogs({ blogs, status, error, getBlogs, deleteBlog }) {
-  if (status === "error") {
+function Blogs({
+  blogs,
+  isLoading,
+  isFetching,
+  isError,
+  error,
+  onRetry,
+  refetchBlogs,
+  deleteBlog,
+}) {
+  if (isError) {
     return (
       <EmptyState
         title="Could not load blogs"
         message={error}
-        action={<Button onClick={getBlogs}>Retry</Button>}
+        action={<Button onClick={onRetry}>Retry</Button>}
       />
     );
   }
 
-  if (status === "success" && !blogs.length) {
+  // `!isLoading` rather than a success flag: only claim "no matches" once the
+  // first load has resolved, so the empty state never flashes before data.
+  if (!isLoading && !blogs.length) {
     return (
       <EmptyState
         title="No blogs match these filters"
@@ -223,10 +214,10 @@ function Blogs({ blogs, status, error, getBlogs, deleteBlog }) {
     <div
       className={clsx(
         "flex justify-start flex-wrap gap-4 mx-auto w-11/12 transition-opacity",
-        status === "loading" && "opacity-50",
+        isFetching && "opacity-50",
       )}
     >
-      {status === "loading" && (
+      {isFetching && (
         <div className="w-full flex justify-center py-2">
           <Spinner />
         </div>
@@ -235,7 +226,7 @@ function Blogs({ blogs, status, error, getBlogs, deleteBlog }) {
         <BlogCard
           key={blog.id}
           blog={blog}
-          getBlogs={getBlogs}
+          getBlogs={refetchBlogs}
           deleteBlog={() => deleteBlog(blog.id)}
         />
       ))}
@@ -264,25 +255,9 @@ function BlogFilter({
   setSortKey,
   onReset,
 }) {
-  const [members, setMembers] = useState([]);
-
-  useEffect(() => {
-    async function getMembers() {
-      try {
-        // includeHidden so placeholder authors (e.g. the blog-author fallback)
-        // remain filterable here even once they're off the public roster.
-        const response = await fetch(`${apiUrl}/team/all?includeHidden=true`);
-
-        if (!response.ok) throw new Error("Failed to fetch members");
-
-        setMembers(await response.json());
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    getMembers();
-  }, []);
+  // includeHidden so placeholder authors (e.g. the blog-author fallback) remain
+  // filterable here even once they're off the public roster.
+  const { data: members = [] } = useTeamMembers();
 
   // Subcategories only exist under "knowledge", so the two selects are coupled:
   // picking a subcategory implies that category, and leaving it clears them.
