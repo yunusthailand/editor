@@ -1,88 +1,85 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import NumberInput from "@/components/form/NumberInput";
 import FileInput from "@/components/form/FileInput";
 import Divider from "@/components/ui/Divider";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const VENTURES_KEY = ["ventures"];
 
 function sortByNo(arr) {
   return [...arr].sort((a, b) => b.no - a.no);
 }
 
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  image: null,
+  imageUrl: null,
+  link: "",
+  excerpt: "",
+  no: "",
+  title_th: "",
+  excerpt_th: "",
+  description_th: "",
+};
+
 export default function UpdateVentureForm() {
-  const [ventures, setVentures] = useState([]);
   const [ventureId, setVentureId] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image: null,
-    imageUrl: null,
-    link: "",
-    excerpt: "",
-    no: "",
-    title_th: "",
-    excerpt_th: "",
-    description_th: "",
-  });
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [error, setError] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [listLoading, setListLoading] = useState(false);
   const [showConfirmId, setShowConfirmId] = useState(null);
 
-  async function fetchVentures() {
-    setListLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/venture/all`);
-      const result = await response.json();
-      setVentures(result);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setListLoading(false);
-    }
-  }
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchVentures();
-  }, []);
+  const { data: ventures = [], isFetching: listLoading } = useQuery({
+    queryKey: VENTURES_KEY,
+    queryFn: () => apiFetch(`/venture/all`),
+  });
 
+  const {
+    data: ventureData,
+    isFetching: itemLoading,
+    isError: itemError,
+  } = useQuery({
+    queryKey: ["venture", ventureId],
+    queryFn: () => apiFetch(`/venture/${ventureId}`),
+    enabled: !!ventureId,
+  });
+
+  // Hydrate the editable draft when a freshly-fetched venture arrives.
   useEffect(() => {
     if (!ventureId) return;
-    async function fetchVenture() {
-      setLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/venture/${ventureId}`);
-        const result = await response.json();
-        const venture = Array.isArray(result)
-          ? result[0]
-          : result.data || result;
-        if (!venture) throw new Error("No venture found");
-        setFormData({
-          title: venture.title || "",
-          excerpt: venture.excerpt || "",
-          description: venture.description || "",
-          image: null,
-          imageUrl: venture.image || "",
-          link: venture.link || "",
-          no: venture.no || "",
-          title_th: venture.title_th || "",
-          excerpt_th: venture.excerpt_th || "",
-          description_th: venture.description_th || "",
-        });
-        setImagePreview(venture.image || null);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load Ventures.");
-      } finally {
-        setLoading(false);
-      }
+    if (itemError) {
+      setError("Failed to load Ventures.");
+      return;
     }
-    fetchVenture();
-  }, [ventureId]);
+    if (!ventureData) return;
+    const venture = Array.isArray(ventureData)
+      ? ventureData[0]
+      : ventureData.data || ventureData;
+    if (!venture) {
+      setError("Failed to load Ventures.");
+      return;
+    }
+    setFormData({
+      title: venture.title || "",
+      excerpt: venture.excerpt || "",
+      description: venture.description || "",
+      image: null,
+      imageUrl: venture.image || "",
+      link: venture.link || "",
+      no: venture.no || "",
+      title_th: venture.title_th || "",
+      excerpt_th: venture.excerpt_th || "",
+      description_th: venture.description_th || "",
+    });
+    setImagePreview(venture.image || null);
+    setError(null);
+  }, [ventureData, ventureId, itemError]);
 
   function handleChange(e) {
     const { name, value, type, files } = e.target;
@@ -96,41 +93,37 @@ export default function UpdateVentureForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
+  const updateMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/venture/${ventureId}`, { method: "PUT", body: form }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: VENTURES_KEY }),
+    onError: () => setError("Error updating venture"),
+  });
+
+  function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const form = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key !== "image") form.append(key, formData[key]);
-      });
-      if (formData.image) form.append("image", formData.image);
-      const response = await fetch(`${apiUrl}/venture/${ventureId}`, {
-        method: "PUT",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Update failed");
-      fetchVentures();
-    } catch (err) {
-      console.error(err);
-      setError("Error updating venture");
-    } finally {
-      setLoading(false);
-    }
+    const form = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key !== "image") form.append(key, formData[key]);
+    });
+    if (formData.image) form.append("image", formData.image);
+    updateMutation.mutate(form);
   }
 
-  async function handleDelete(id) {
-    try {
-      const response = await fetch(`${apiUrl}/venture/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete");
-      fetchVentures();
+  const deleteMutation = useMutation({
+    mutationFn: (id) => apiFetch(`/venture/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: VENTURES_KEY });
       setShowConfirmId(null);
-    } catch (err) {
-      console.error("Error:", err);
-    }
+    },
+    onError: (err) => console.error("Error:", err),
+  });
+
+  function handleDelete(id) {
+    deleteMutation.mutate(id);
   }
+
+  const loading = itemLoading || updateMutation.isPending;
 
   return (
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">

@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
 import Divider from "@/components/ui/Divider";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const EMPTY_FORM = {
+  name: "",
+  role: "",
+  team: "",
+  description: "",
+  linkedin: "",
+  role_th: "",
+  description_th: "",
+  isGuest: false,
+};
 
 export default function CreateTeamMemberForm() {
   const formRef = useRef(null);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    role: "",
-    team: "",
-    description: "",
-    linkedin: "",
-    role_th: "",
-    description_th: "",
-    isGuest: false,
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!file) {
@@ -42,41 +46,33 @@ export default function CreateTeamMemberForm() {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([key, value]) =>
-        form.append(key, value),
-      );
-      if (file) form.append("image", file);
-      const response = await fetch(`${apiUrl}/team/add`, {
-        method: "POST",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Failed to create member");
+  const createMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/team/add`, { method: "POST", body: form }),
+    onSuccess: () => {
       setMessage("Team member created successfully");
       formRef.current.reset();
       setFile(null);
       setImagePreview(null);
-      setFormData({
-        name: "",
-        role: "",
-        team: "",
-        description: "",
-        linkedin: "",
-        role_th: "",
-        description_th: "",
-        isGuest: false,
-      });
-    } catch (err) {
+      setFormData(EMPTY_FORM);
+      // The update screen and author filter read the same cached list.
+      queryClient.invalidateQueries({ queryKey: TEAM_MEMBERS_KEY });
+    },
+    onError: (err) => {
       console.error(err);
-      setMessage("Error creating member");
-    } finally {
-      setLoading(false);
-    }
+      setMessage(err.message || "Error creating member");
+    },
+  });
+
+  const loading = createMutation.isPending;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setMessage("");
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => form.append(key, value));
+    if (file) form.append("image", file);
+    createMutation.mutate(form);
   }
 
   return (

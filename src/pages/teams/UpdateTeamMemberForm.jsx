@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { useTeamMembers, TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
 import Divider from "@/components/ui/Divider";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
@@ -6,8 +9,6 @@ import SelectInput from "@/components/form/SelectInput";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusMessage from "@/components/ui/StatusMessage";
-
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 const TEAM_OPTIONS = [
   "Ventures",
@@ -17,78 +18,73 @@ const TEAM_OPTIONS = [
   "Programs",
 ];
 
+const EMPTY_FORM = {
+  name: "",
+  role: "",
+  team: "",
+  description: "",
+  image: null,
+  linkedin: "",
+  youtube: "",
+  role_th: "",
+  description_th: "",
+  isGuest: false,
+};
+
 export default function UpdateTeamMemberForm() {
-  const [members, setMembers] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [status, setStatus] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    role: "",
-    team: "",
-    description: "",
-    image: null,
-    linkedin: "",
-    youtube: "",
-    role_th: "",
-    description_th: "",
-    isGuest: false,
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const queryClient = useQueryClient();
+
+  // Shared with the blog author filter — one cached member list, refreshed by
+  // the mutations below.
+  const { data: members = [] } = useTeamMembers();
+
+  const {
+    data: selectedMember,
+    isFetching: memberLoading,
+    isError: memberError,
+  } = useQuery({
+    queryKey: ["team-member", selectedId],
+    queryFn: () => apiFetch(`/team/${selectedId}`),
+    enabled: !!selectedId,
   });
 
-  async function fetchMembers() {
-    try {
-      // Hidden members must stay editable here even though they're off the
-      // public roster — otherwise the placeholder author can't be managed.
-      const response = await fetch(`${apiUrl}/team/all?includeHidden=true`);
-      const result = await response.json();
-      setMembers(result);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  useEffect(() => {
-    fetchMembers();
-  }, []);
-
+  // The query owns the server copy; the form owns an editable draft. Hydrate the
+  // draft whenever a freshly-fetched member arrives — the one place these two
+  // need syncing, which is exactly what an effect is for.
   useEffect(() => {
     if (!selectedId) return;
-    async function fetchMember() {
-      setLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/team/${selectedId}`);
-        const result = await response.json();
-        const member = result?.[0];
-        if (!member) {
-          setError("Member not found");
-          return;
-        }
-        setFormData({
-          name: member.name || "",
-          role: member.role || "",
-          team: member.team || "",
-          description: member.description || "",
-          image: null,
-          linkedin: member.links?.[0]?.url || "",
-          youtube: member.links?.[1]?.url || "",
-          role_th: member.role_th || "",
-          description_th: member.description_th || "",
-          isGuest: member["is-guest"] === true,
-        });
-        setImagePreview(member.image || null);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load member");
-      } finally {
-        setLoading(false);
-      }
+    if (memberError) {
+      setError("Failed to load member");
+      return;
     }
-    fetchMember();
-  }, [selectedId]);
+    if (!selectedMember) return;
+    const member = selectedMember[0];
+    if (!member) {
+      setError("Member not found");
+      return;
+    }
+    setFormData({
+      name: member.name || "",
+      role: member.role || "",
+      team: member.team || "",
+      description: member.description || "",
+      image: null,
+      linkedin: member.links?.[0]?.url || "",
+      youtube: member.links?.[1]?.url || "",
+      role_th: member.role_th || "",
+      description_th: member.description_th || "",
+      isGuest: member["is-guest"] === true,
+    });
+    setImagePreview(member.image || null);
+    setError("");
+  }, [selectedMember, selectedId, memberError]);
 
   function handleChange(e) {
     const { name, value, type, files, checked } = e.target;
@@ -105,36 +101,32 @@ export default function UpdateTeamMemberForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) form.append(key, value);
-      });
-      const response = await fetch(`${apiUrl}/team/${selectedId}`, {
-        method: "PUT",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Update failed");
+  const updateMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/team/${selectedId}`, { method: "PUT", body: form }),
+    onSuccess: () => {
       setStatus({ kind: "success", text: "Team member updated" });
-      fetchMembers();
-    } catch (err) {
-      console.error(err);
-      setStatus({ kind: "error", text: err.message || "Error updating member" });
-    } finally {
-      setLoading(false);
-    }
+      queryClient.invalidateQueries({ queryKey: TEAM_MEMBERS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["team-member", selectedId] });
+    },
+    onError: (err) =>
+      setStatus({ kind: "error", text: err.message || "Error updating member" }),
+  });
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) form.append(key, value);
+    });
+    updateMutation.mutate(form);
   }
 
   // Deleting a member reassigns everything they wrote, so the count is fetched
   // and shown before the admin commits to it.
   async function requestDelete(member) {
     try {
-      const response = await fetch(`${apiUrl}/team/${member.id}/blog-count`);
-      if (!response.ok) throw new Error("Could not check authored blogs");
-      const { count } = await response.json();
+      const { count } = await apiFetch(`/team/${member.id}/blog-count`);
 
       const fallback = members.find(
         (m) => m["is-guest"] === true && m.id !== member.id,
@@ -153,8 +145,29 @@ export default function UpdateTeamMemberForm() {
     }
   }
 
-  async function confirmDelete() {
-    const { member, blogCount, reassignTo } = deleteTarget;
+  const deleteMutation = useMutation({
+    mutationFn: ({ member, blogCount, reassignTo }) => {
+      const qs =
+        blogCount > 0 ? `?reassignTo=${encodeURIComponent(reassignTo)}` : "";
+      return apiFetch(`/team/${member.id}${qs}`, { method: "DELETE" });
+    },
+    onSuccess: (_data, { member }) => {
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: TEAM_MEMBERS_KEY });
+      // Reassignment rewrote blog authors, so the blog list is now stale.
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      if (selectedId === member.id) setSelectedId(null);
+    },
+    // The server's 409s carry the actionable text — surface it rather than
+    // collapsing every failure into a generic message.
+    onError: (err) =>
+      setDeleteTarget((prev) =>
+        prev ? { ...prev, busy: false, error: err.message || "Delete failed" } : prev,
+      ),
+  });
+
+  function confirmDelete() {
+    const { blogCount, reassignTo } = deleteTarget;
 
     if (blogCount > 0 && !reassignTo) {
       setDeleteTarget((prev) => ({
@@ -165,32 +178,10 @@ export default function UpdateTeamMemberForm() {
     }
 
     setDeleteTarget((prev) => ({ ...prev, busy: true, error: "" }));
-
-    try {
-      const url = new URL(`${apiUrl}/team/${member.id}`);
-      if (blogCount > 0) url.searchParams.set("reassignTo", reassignTo);
-
-      const response = await fetch(url, { method: "DELETE" });
-      const result = await response.json().catch(() => ({}));
-
-      // The server's 409s carry the actionable text — surface it rather than
-      // collapsing every failure into a generic message.
-      if (!response.ok) {
-        throw new Error(result.message || `Delete failed (${response.status})`);
-      }
-
-      setDeleteTarget(null);
-      fetchMembers();
-      if (selectedId === member.id) setSelectedId(null);
-    } catch (err) {
-      console.error(err);
-      setDeleteTarget((prev) => ({
-        ...prev,
-        busy: false,
-        error: err.message || "Delete failed",
-      }));
-    }
+    deleteMutation.mutate(deleteTarget);
   }
+
+  const loading = memberLoading || updateMutation.isPending;
 
   return (
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">
