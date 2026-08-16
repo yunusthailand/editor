@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const apiUrl = "https://backend-yth.onrender.com";
+const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 export default function MemberInput({ author, setAuthor }) {
   const [members, setMembers] = useState([]);
@@ -8,7 +8,9 @@ export default function MemberInput({ author, setAuthor }) {
   useEffect(() => {
     async function getMembers() {
       try {
-        const response = await fetch(`${apiUrl}/team/all`);
+        // includeHidden so placeholder authors such as "Yunus Team" can be
+        // credited on a post even though they're off the public roster.
+        const response = await fetch(`${apiUrl}/team/all?includeHidden=true`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch members");

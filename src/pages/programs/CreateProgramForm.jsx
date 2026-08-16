@@ -1,25 +1,31 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 import FileInput from "@/components/form/FileInput";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
+import Divider from "@/components/ui/Divider";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const EMPTY_FORM = {
+  title: "",
+  excerpt: "",
+  description: "",
+  image: null,
+  link: "",
+  title_th: "",
+  excerpt_th: "",
+  description_th: "",
+};
 
 export default function CreateProgramForm() {
   const formRef = useRef(null);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    excerpt: "",
-    description: "",
-    image: null,
-    link: "",
-    title_th: "",
-    excerpt_th: "",
-    description_th: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!formData.image) {
@@ -40,46 +46,40 @@ export default function CreateProgramForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null) form.append(key, value);
-      });
-      const response = await fetch(`${apiUrl}/program/add`, {
-        method: "POST",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Upload failed");
+  const createMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/program/add`, { method: "POST", body: form }),
+    onSuccess: () => {
       setMessage("Program created successfully");
-      setFormData({
-        title: "",
-        excerpt: "",
-        description: "",
-        image: null,
-        link: "",
-        title_th: "",
-        excerpt_th: "",
-        description_th: "",
-      });
+      setFormData(EMPTY_FORM);
       formRef.current.reset();
       setImagePreview(null);
-    } catch (err) {
+      queryClient.invalidateQueries({ queryKey: ["programs"] });
+    },
+    onError: (err) => {
       console.error(err);
-      setMessage("Failed to create program");
-    } finally {
-      setLoading(false);
-    }
+      setMessage(err.message || "Failed to create program");
+    },
+  });
+
+  const loading = createMutation.isPending;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setMessage("");
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) form.append(key, value);
+    });
+    createMutation.mutate(form);
   }
 
   return (
-    <div className="max-w-96 mx-auto">
+    <div className="max-w-lg mx-auto">
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-2 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-2 bg-white border shadow-card text-xs"
       >
         <FileInput onChange={handleChange} name="image" />
         {imagePreview && (
@@ -143,27 +143,12 @@ export default function CreateProgramForm() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Program"}
-        </button>
-        {message && <p className="mt-4 text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}

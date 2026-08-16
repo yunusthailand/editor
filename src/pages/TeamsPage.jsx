@@ -1,6 +1,7 @@
 import { useState } from "react";
 
-import clsx from "clsx";
+import PageHeader from "@/components/ui/PageHeader";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import CreateTeamMemberForm from "./teams/CreateTeamMemberForm";
 
@@ -10,53 +11,21 @@ export default function TeamsPage() {
   const [mode, setMode] = useState("create");
 
   return (
-    <main className="min-h-screen py-16 space-y-8">
-      <TeamBar mode={mode} setMode={setMode} />
+    <Tabs value={mode} onValueChange={setMode} className="space-y-8">
+      <div className="flex flex-col space-y-8 max-w-[960px] mx-auto items-center">
+        <PageHeader title="Team Members" />
+        <TabsList>
+          <TabsTrigger value="create">Create New Member</TabsTrigger>
+          <TabsTrigger value="update">Edit Member Details</TabsTrigger>
+        </TabsList>
+      </div>
 
-      {mode === "create" && <CreateTeamMemberForm />}
-
-      {mode === "update" && <UpdateTeamMemberForm />}
-    </main>
+      <TabsContent value="create">
+        <CreateTeamMemberForm />
+      </TabsContent>
+      <TabsContent value="update">
+        <UpdateTeamMemberForm />
+      </TabsContent>
+    </Tabs>
   );
-}
-
-function TeamBar({ mode, setMode }) {
-  return (
-    <nav className="flex flex-col pb-8 space-y-8 w-[960px] mx-auto items-center">
-      <BigText text="Team Members" />
-
-      <ol className="flex space-x-2 justify-center">
-        {["create", "update"].map((act) => (
-          <li
-            key={act}
-            className={clsx(
-              "px-4 py-2 rounded-lg border transition-all",
-
-              act === mode && "bg-secondary-t text-white scale-105",
-            )}
-          >
-            <button onClick={() => setMode(act)}>
-              <SmallText
-                text={
-                  act === "update" ? "Edit Member Details" : "Create New Member"
-                }
-              />
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  );
-}
-
-export function BigText({ text }) {
-  return <p className="text-5xl font-thin tracking-wider">{text}</p>;
-}
-
-export function MidText({ text }) {
-  return <p className="text-lg tracking-wide font-thin">{text}</p>;
-}
-
-export function SmallText({ text }) {
-  return <p className="text-sm tracking-wide font-thin">{text}</p>;
 }

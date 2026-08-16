@@ -4,7 +4,7 @@ import EditPanel from "./EditPanel";
 import PreviewPanel from "./PreviewPanel";
 import ErrorModal from "@/components/shared/ErrorModal";
 
-const apiUrl = "https://backend-yth.onrender.com";
+const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 function toISOMidnightUTC(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);

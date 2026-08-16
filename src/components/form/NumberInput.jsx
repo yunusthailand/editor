@@ -1,14 +1,16 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 export default function NumberInput({ label, name, onChange, value = "" }) {
   return (
-    <div className="flex flex-col space-y-2">
-      <label className="text-xs font-medium">{label}</label>
-
-      <input
+    <div className="flex flex-col space-y-1.5">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        id={name}
         type="number"
         name={name}
         value={value}
         onChange={onChange}
-        className="  p-2 rounded w-full border border-neutral-700"
       />
     </div>
   );

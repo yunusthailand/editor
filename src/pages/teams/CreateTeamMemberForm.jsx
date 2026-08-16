@@ -1,22 +1,31 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
+import Divider from "@/components/ui/Divider";
+import FileInput from "@/components/form/FileInput";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const EMPTY_FORM = {
+  name: "",
+  role: "",
+  team: "",
+  description: "",
+  linkedin: "",
+  role_th: "",
+  description_th: "",
+  isGuest: false,
+};
 
 export default function CreateTeamMemberForm() {
   const formRef = useRef(null);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    role: "",
-    team: "",
-    description: "",
-    linkedin: "",
-    role_th: "",
-    description_th: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!file) {
@@ -29,61 +38,54 @@ export default function CreateTeamMemberForm() {
   }, [file]);
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   }
 
   function handleFileChange(e) {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([key, value]) =>
-        form.append(key, value),
-      );
-      if (file) form.append("image", file);
-      const response = await fetch(`${apiUrl}/team/add`, {
-        method: "POST",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Failed to create member");
+  const createMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/team/add`, { method: "POST", body: form }),
+    onSuccess: () => {
       setMessage("Team member created successfully");
       formRef.current.reset();
       setFile(null);
       setImagePreview(null);
-      setFormData({
-        name: "",
-        role: "",
-        team: "",
-        description: "",
-        linkedin: "",
-        role_th: "",
-        description_th: "",
-      });
-    } catch (err) {
+      setFormData(EMPTY_FORM);
+      // The update screen and author filter read the same cached list.
+      queryClient.invalidateQueries({ queryKey: TEAM_MEMBERS_KEY });
+    },
+    onError: (err) => {
       console.error(err);
-      setMessage("Error creating member");
-    } finally {
-      setLoading(false);
-    }
+      setMessage(err.message || "Error creating member");
+    },
+  });
+
+  const loading = createMutation.isPending;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setMessage("");
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => form.append(key, value));
+    if (file) form.append("image", file);
+    createMutation.mutate(form);
   }
 
   return (
-    <div className="max-w-96 mx-auto">
+    <div className="max-w-lg mx-auto">
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
-        <div className="space-y-2">
-          <label className="font-medium">Team Image</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-        </div>
+        <FileInput label="Team Image" onChange={handleFileChange} />
         {imagePreview && (
           <div className="mt-4 w-[120px] h-[120px] border rounded overflow-hidden">
             <img
@@ -137,30 +139,33 @@ export default function CreateTeamMemberForm() {
           onChange={handleChange}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Divider label="Visibility" />
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            name="isGuest"
+            checked={formData.isGuest}
+            onChange={handleChange}
+            className="mt-0.5"
+          />
+          <span>
+            Hide from public team page
+            <span className="block text-gray-400">
+              Use for placeholder authors such as “Yunus Team”. They can still
+              be credited on blog posts.
+            </span>
+          </span>
+        </label>
+
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Team Member"}
-        </button>
-        {message && <p className="text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}
 
 function FormInput({ label, ...props }) {
   return (

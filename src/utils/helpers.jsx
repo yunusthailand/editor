@@ -52,45 +52,6 @@ export function mapDatabaseImages(blog) {
   };
 }
 
-export function sortArrayByField(array, field, ascending = true) {
-  if (!Array.isArray(array) || array.length === 0) {
-    console.warn("Invalid or empty array");
-    return [];
-  }
-
-  const sortedArray = [...array].sort((a, b) => {
-    const valA = a[field];
-    const valB = b[field];
-
-    // Handle undefined/null values
-    if (valA === undefined || valA === null) return 1;
-    if (valB === undefined || valB === null) return -1;
-
-    // Type checking
-    const isDateA = valA instanceof Date || !isNaN(Date.parse(valA));
-    const isDateB = valB instanceof Date || !isNaN(Date.parse(valB));
-
-    if (typeof valA === "number" && typeof valB === "number") {
-      return ascending ? valA - valB : valB - valA;
-    }
-
-    if (isDateA && isDateB) {
-      const timeA = new Date(valA).getTime();
-      const timeB = new Date(valB).getTime();
-      return ascending ? timeA - timeB : timeB - timeA;
-    }
-
-    // Default to string comparison (alphabetical)
-    const strA = String(valA).toLowerCase();
-    const strB = String(valB).toLowerCase();
-
-    if (strA < strB) return ascending ? -1 : 1;
-    if (strA > strB) return ascending ? 1 : -1;
-    return 0;
-  });
-
-  return sortedArray;
-}
 
 export function formatReadableDate(
   dateString,

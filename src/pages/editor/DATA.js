@@ -65,7 +65,7 @@ export const eleOptions = [
   },
   {
     type: "list",
-    desc: "Write in comma seperated values like Sam , [Frodo](wikipedia.com) , Boromir",
+    desc: "One item per line. Plain text, or a link written as [text](url) e.g. [Frodo](wikipedia.com)",
 
     load: {
       head: "Climate",

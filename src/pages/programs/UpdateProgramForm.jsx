@@ -1,87 +1,86 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 import TextInput from "@/components/form/TextInput";
 import TextArea from "@/components/form/TextArea";
 import NumberInput from "@/components/form/NumberInput";
 import FileInput from "@/components/form/FileInput";
+import Divider from "@/components/ui/Divider";
+import { Button } from "@/components/ui/button";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const PROGRAMS_KEY = ["programs"];
 
 function sortByNo(arr) {
   return [...arr].sort((a, b) => b.no - a.no);
 }
 
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  image: null,
+  imageUrl: null,
+  link: "",
+  excerpt: "",
+  no: "",
+  title_th: "",
+  excerpt_th: "",
+  description_th: "",
+};
+
 export default function UpdateProgramForm() {
-  const [programs, setPrograms] = useState([]);
   const [programId, setProgramId] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image: null,
-    imageUrl: null,
-    link: "",
-    excerpt: "",
-    no: "",
-    title_th: "",
-    excerpt_th: "",
-    description_th: "",
-  });
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [error, setError] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [listLoading, setListLoading] = useState(false);
   const [showConfirmId, setShowConfirmId] = useState(null);
 
-  async function fetchPrograms() {
-    setListLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/program/all`);
-      const result = await response.json();
-      setPrograms(result);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setListLoading(false);
-    }
-  }
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchPrograms();
-  }, []);
+  const { data: programs = [], isFetching: listLoading } = useQuery({
+    queryKey: PROGRAMS_KEY,
+    queryFn: () => apiFetch(`/program/all`),
+  });
 
+  const {
+    data: programData,
+    isFetching: itemLoading,
+    isError: itemError,
+  } = useQuery({
+    queryKey: ["program", programId],
+    queryFn: () => apiFetch(`/program/${programId}`),
+    enabled: !!programId,
+  });
+
+  // Hydrate the editable draft when a freshly-fetched program arrives.
   useEffect(() => {
     if (!programId) return;
-    async function fetchProgram() {
-      setLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/program/${programId}`);
-        const result = await response.json();
-        const program = Array.isArray(result)
-          ? result[0]
-          : result.data || result;
-        if (!program) throw new Error("No program found");
-        setFormData({
-          title: program.title || "",
-          excerpt: program.excerpt || "",
-          description: program.description || "",
-          image: null,
-          imageUrl: program.image || "",
-          link: program.link || "",
-          no: program.no || "",
-          title_th: program.title_th || "",
-          excerpt_th: program.excerpt_th || "",
-          description_th: program.description_th || "",
-        });
-        setImagePreview(program.image || null);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load Programs.");
-      } finally {
-        setLoading(false);
-      }
+    if (itemError) {
+      setError("Failed to load Programs.");
+      return;
     }
-    fetchProgram();
-  }, [programId]);
+    if (!programData) return;
+    const program = Array.isArray(programData)
+      ? programData[0]
+      : programData.data || programData;
+    if (!program) {
+      setError("Failed to load Programs.");
+      return;
+    }
+    setFormData({
+      title: program.title || "",
+      excerpt: program.excerpt || "",
+      description: program.description || "",
+      image: null,
+      imageUrl: program.image || "",
+      link: program.link || "",
+      no: program.no || "",
+      title_th: program.title_th || "",
+      excerpt_th: program.excerpt_th || "",
+      description_th: program.description_th || "",
+    });
+    setImagePreview(program.image || null);
+    setError(null);
+  }, [programData, programId, itemError]);
 
   function handleChange(e) {
     const { name, value, type, files } = e.target;
@@ -95,47 +94,43 @@ export default function UpdateProgramForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
+  const updateMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/program/${programId}`, { method: "PUT", body: form }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PROGRAMS_KEY }),
+    onError: () => setError("Error updating program"),
+  });
+
+  function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const form = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key !== "image") form.append(key, formData[key]);
-      });
-      if (formData.image) form.append("image", formData.image);
-      const response = await fetch(`${apiUrl}/program/${programId}`, {
-        method: "PUT",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Update failed");
-      fetchPrograms();
-    } catch (err) {
-      console.error(err);
-      alert("Error updating program");
-    } finally {
-      setLoading(false);
-    }
+    const form = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key !== "image") form.append(key, formData[key]);
+    });
+    if (formData.image) form.append("image", formData.image);
+    updateMutation.mutate(form);
   }
 
-  async function handleDelete(id) {
-    try {
-      const response = await fetch(`${apiUrl}/program/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete");
-      fetchPrograms();
+  const deleteMutation = useMutation({
+    mutationFn: (id) => apiFetch(`/program/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROGRAMS_KEY });
       setShowConfirmId(null);
-    } catch (err) {
-      console.error("Error:", err);
-    }
+    },
+    onError: (err) => console.error("Error:", err),
+  });
+
+  function handleDelete(id) {
+    deleteMutation.mutate(id);
   }
+
+  const loading = itemLoading || updateMutation.isPending;
 
   return (
     <div className="mx-auto flex gap-12 justify-center max-w-[1440px]">
       <form
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-2 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-2 bg-white border shadow-card text-xs"
       >
         {loading && <p className="text-gray-500">Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
@@ -210,13 +205,9 @@ export default function UpdateProgramForm() {
           name="no"
         />
 
-        <button
-          type="submit"
-          className="p-2 bg-secondary-t text-white rounded"
-          disabled={loading}
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Updating..." : "Update Program"}
-        </button>
+        </Button>
       </form>
 
       <Programs
@@ -232,17 +223,6 @@ export default function UpdateProgramForm() {
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}
 
 function Programs({
   setProgramId,
@@ -276,28 +256,28 @@ function Programs({
               onClick={() => setProgramId(program.id)}
             >
               {showConfirmId === program.id && (
-                <div className="text-white absolute inset-0 flex justify-center items-center rounded-2xl z-10">
-                  <div className="bg-secondary-t p-4 rounded-lg text-center space-x-4 w-full">
-                    <div className="flex justify-center text-sm gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(program.id);
-                        }}
-                        className="bg-secondary-r px-2 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowConfirmId(null);
-                        }}
-                        className="border px-2 py-1 rounded"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                <div className="absolute inset-0 flex justify-center items-center rounded-card bg-white/95 border shadow-card z-10">
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(program.id);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConfirmId(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               )}
@@ -309,15 +289,16 @@ function Programs({
                 />
               </div>
               <p className="text-xs mr-2">{program.title}</p>
-              <button
-                className="bg-secondary-r p-2 rounded-full text-xs text-white"
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowConfirmId(program.id);
                 }}
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ))
         ) : (

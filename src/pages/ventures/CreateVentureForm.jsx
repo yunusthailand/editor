@@ -1,23 +1,30 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import Divider from "@/components/ui/Divider";
+import FileInput from "@/components/form/FileInput";
+import { Button } from "@/components/ui/button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
-const apiUrl = import.meta.env.VITE_BACKEND_URL;
+const EMPTY_FORM = {
+  title: "",
+  excerpt: "",
+  description: "",
+  link: "",
+  no: "",
+  title_th: "",
+  excerpt_th: "",
+  description_th: "",
+};
 
 export default function CreateVentureForm() {
   const formRef = useRef(null);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    excerpt: "",
-    description: "",
-    link: "",
-    no: "",
-    title_th: "",
-    excerpt_th: "",
-    description_th: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!file) {
@@ -38,51 +45,42 @@ export default function CreateVentureForm() {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([key, value]) =>
-        form.append(key, value),
-      );
-      if (file) form.append("image", file);
-      const response = await fetch(`${apiUrl}/venture/add`, {
-        method: "POST",
-        body: form,
-      });
-      if (!response.ok) throw new Error("Failed to create venture");
+  const createMutation = useMutation({
+    mutationFn: (form) =>
+      apiFetch(`/venture/add`, { method: "POST", body: form }),
+    onSuccess: () => {
       setMessage("Venture created successfully");
       formRef.current.reset();
       setFile(null);
       setImagePreview(null);
-      setFormData({
-        title: "",
-        excerpt: "",
-        description: "",
-        link: "",
-        no: "",
-        title_th: "",
-        excerpt_th: "",
-        description_th: "",
-      });
-    } catch (err) {
+      setFormData(EMPTY_FORM);
+      queryClient.invalidateQueries({ queryKey: ["ventures"] });
+    },
+    onError: (err) => {
       console.error(err);
-      setMessage("Error creating venture");
-    } finally {
-      setLoading(false);
-    }
+      setMessage(err.message || "Error creating venture");
+    },
+  });
+
+  const loading = createMutation.isPending;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setMessage("");
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => form.append(key, value));
+    if (file) form.append("image", file);
+    createMutation.mutate(form);
   }
 
   return (
-    <div className="max-w-96 mx-auto">
+    <div className="max-w-lg mx-auto">
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="p-6 rounded-xl space-y-4 bg-white border-2 text-xs"
+        className="p-6 rounded-card space-y-4 bg-white border shadow-card text-xs"
       >
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <FileInput label="Venture Image" onChange={handleFileChange} />
         {imagePreview && (
           <div className="mt-4 w-[120px] h-[120px] border rounded overflow-hidden">
             <img
@@ -148,30 +146,15 @@ export default function CreateVentureForm() {
           onChange={handleChange}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-secondary-t text-white rounded"
-        >
+        <Button type="submit" loading={loading}>
           {loading ? "Uploading..." : "Add Venture"}
-        </button>
-        {message && <p className="text-secondary-t">{message}</p>}
+        </Button>
+        {message && <StatusMessage>{message}</StatusMessage>}
       </form>
     </div>
   );
 }
 
-function Divider({ label }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-gray-400 text-[10px] uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="h-px flex-1 bg-gray-200" />
-    </div>
-  );
-}
 
 function Input({ label, ...props }) {
   return (
