@@ -283,36 +283,48 @@ export default function UpdateTeamMemberForm() {
       <div className="max-w-[666px] space-y-4">
         <p className="text-xl font-light">Select Member</p>
         <section className="flex gap-4 flex-wrap">
-          {/* Placeholder authors (is-guest, e.g. "Yunus Team") are kept out of
-              the management list — they aren't real people to edit or delete —
-              but stay in `members` so they remain a reassign target below. */}
-          {members
-            .filter((member) => member["is-guest"] !== true)
-            .map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-2 bg-white p-3 rounded-full border"
-            >
-              <button
-                onClick={() => setSelectedId(member.id)}
-                className="flex items-center gap-2"
+          {/* Hidden placeholder authors (is-guest) are listed too: they have to
+              stay editable — renaming one, or un-hiding it, is the only way to
+              make it deletable, since the server refuses to delete a hidden
+              member. */}
+          {members.map((member) => {
+            const hidden = member["is-guest"] === true;
+            return (
+              <div
+                key={member.id}
+                className="flex items-center gap-2 bg-white p-3 rounded-full border"
               >
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="size-8 rounded-full object-cover"
-                />
-                <span className="text-xs">{member.name}</span>
-              </button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => requestDelete(member)}
-              >
-                Delete
-              </Button>
-            </div>
-          ))}
+                <button
+                  onClick={() => setSelectedId(member.id)}
+                  className="flex items-center gap-2"
+                >
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="size-8 rounded-full object-cover"
+                  />
+                  <span className="text-xs">{member.name}</span>
+                  {hidden && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                      Hidden
+                    </span>
+                  )}
+                </button>
+                <span
+                  title={hidden ? "Un-hide this member before deleting" : undefined}
+                >
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={hidden}
+                    onClick={() => requestDelete(member)}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </div>
+            );
+          })}
         </section>
       </div>
 
