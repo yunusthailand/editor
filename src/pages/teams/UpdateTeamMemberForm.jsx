@@ -283,10 +283,9 @@ export default function UpdateTeamMemberForm() {
       <div className="max-w-[666px] space-y-4">
         <p className="text-xl font-light">Select Member</p>
         <section className="flex gap-4 flex-wrap">
-          {/* Hidden placeholder authors (is-guest) are listed too: they have to
-              stay editable — renaming one, or un-hiding it, is the only way to
-              make it deletable, since the server refuses to delete a hidden
-              member. */}
+          {/* Hidden placeholder authors (is-guest) are listed too, so they stay
+              editable and deletable; deleting one reassigns its posts like any
+              other member. */}
           {members.map((member) => {
             const hidden = member["is-guest"] === true;
             return (
@@ -310,18 +309,13 @@ export default function UpdateTeamMemberForm() {
                     </span>
                   )}
                 </button>
-                <span
-                  title={hidden ? "Un-hide this member before deleting" : undefined}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => requestDelete(member)}
                 >
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={hidden}
-                    onClick={() => requestDelete(member)}
-                  >
-                    Delete
-                  </Button>
-                </span>
+                  Delete
+                </Button>
               </div>
             );
           })}
