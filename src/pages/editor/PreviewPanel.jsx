@@ -33,7 +33,7 @@ export default function PreviewPanel({
   const now = new Date().toLocaleDateString("en-US", options);
 
   return (
-    <main className="pt-12 px-2 w-[972px] flex flex-col space-y-12 mx-auto border-4 border-secondary-y bg-white min-h-screen">
+    <main className="pt-12 px-2 w-[972px] max-w-full flex flex-col space-y-12 mx-auto border-4 border-secondary-y bg-white min-h-screen">
       {/* Lang indicator */}
       <div className="flex justify-center">
         <span

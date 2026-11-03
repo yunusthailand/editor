@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import EditPanel from "./EditPanel";
 import PreviewPanel from "./PreviewPanel";
+import EditorToolbar from "./components/EditorToolbar";
 import ErrorModal from "@/components/shared/ErrorModal";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
@@ -196,41 +197,24 @@ export default function BlogEditor() {
         setCreatedAt={setCreatedAt}
         lang={lang}
       />
-      <PreviewPanel
-        blogId={blogId}
-        editors={editors}
-        title={lang === "th" ? title_th || title : title}
-        headerImage={headerImage}
-        author={author}
-        blogDate={blogDate}
-        category={category}
-        subcategory={subcategory}
-        lang={lang}
-      />
-
-      {/* The wrapper spans the full viewport width so the bar can be centred, but
-          it sits above the side panel. pointer-events-none keeps that empty
-          strip from swallowing clicks meant for the panel (the "Add" button
-          lives in the same band); only the visible card takes events. */}
-      <div className="fixed bottom-8 z-20 w-full pointer-events-none">
-        <div className="pointer-events-auto flex justify-center bg-white max-w-96 mx-auto p-4 rounded-lg shadow-lg gap-4">
-          <button
-            onClick={() => setLang(lang === "en" ? "th" : "en")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-              lang === "th"
-                ? "bg-secondary-t text-white"
-                : "bg-white text-black border-gray-300"
-            }`}
-          >
-            {lang === "en" ? "Switch to ภาษาไทย" : "Switch to English"}
-          </button>
-          <button
-            className="bg-secondary-t p-3 text-2xl text-white rounded-xl"
-            onClick={handleSaveBlog}
-          >
-            {blogId ? "Update" : "Create"}
-          </button>
-        </div>
+      <div className="min-w-0 flex-1">
+        <EditorToolbar
+          lang={lang}
+          setLang={setLang}
+          isEditing={Boolean(blogId)}
+          onSave={handleSaveBlog}
+        />
+        <PreviewPanel
+          blogId={blogId}
+          editors={editors}
+          title={lang === "th" ? title_th || title : title}
+          headerImage={headerImage}
+          author={author}
+          blogDate={blogDate}
+          category={category}
+          subcategory={subcategory}
+          lang={lang}
+        />
       </div>
 
       <ErrorModal error={error} onClose={() => setError(null)} />
