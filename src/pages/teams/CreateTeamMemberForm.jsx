@@ -4,8 +4,19 @@ import { apiFetch } from "@/lib/api";
 import { TEAM_MEMBERS_KEY } from "@/hooks/useTeamMembers";
 import Divider from "@/components/ui/Divider";
 import FileInput from "@/components/form/FileInput";
+import TextInput from "@/components/form/TextInput";
+import TextArea from "@/components/form/TextArea";
+import SelectInput from "@/components/form/SelectInput";
 import { Button } from "@/components/ui/button";
 import StatusMessage from "@/components/ui/StatusMessage";
+
+const TEAM_OPTIONS = [
+  "Ventures",
+  "Operations",
+  "Advisors",
+  "Leaderships",
+  "Programs",
+];
 
 const EMPTY_FORM = {
   name: "",
@@ -97,20 +108,26 @@ export default function CreateTeamMemberForm() {
         )}
 
         <Divider label="English" />
-        <FormInput
+        <TextInput
           label="Name"
           name="name"
           value={formData.name}
           onChange={handleChange}
         />
-        <FormInput
+        <TextInput
           label="Role"
           name="role"
           value={formData.role}
           onChange={handleChange}
         />
-        <TeamSelect value={formData.team} onChange={handleChange} />
-        <FormTextarea
+        <SelectInput
+          label="Team"
+          name="team"
+          value={formData.team}
+          onChange={handleChange}
+          options={TEAM_OPTIONS}
+        />
+        <TextArea
           label="Description"
           name="description"
           value={formData.description}
@@ -118,13 +135,13 @@ export default function CreateTeamMemberForm() {
         />
 
         <Divider label="ภาษาไทย" />
-        <FormInput
+        <TextInput
           label="ตำแหน่ง (Role TH)"
           name="role_th"
           value={formData.role_th}
           onChange={handleChange}
         />
-        <FormTextarea
+        <TextArea
           label="คำอธิบาย (Description TH)"
           name="description_th"
           value={formData.description_th}
@@ -132,7 +149,7 @@ export default function CreateTeamMemberForm() {
         />
 
         <Divider label="Links" />
-        <FormInput
+        <TextInput
           label="LinkedIn"
           name="linkedin"
           value={formData.linkedin}
@@ -167,43 +184,3 @@ export default function CreateTeamMemberForm() {
 }
 
 
-function FormInput({ label, ...props }) {
-  return (
-    <div className="space-y-1">
-      <label className="block font-medium">{label}</label>
-      <input {...props} className="w-full border rounded p-2" />
-    </div>
-  );
-}
-
-function FormTextarea({ label, ...props }) {
-  return (
-    <div className="space-y-1">
-      <label className="block font-medium">{label}</label>
-      <textarea {...props} rows={6} className="w-full border rounded p-2" />
-    </div>
-  );
-}
-
-function TeamSelect(props) {
-  const options = [
-    "Ventures",
-    "Operations",
-    "Advisors",
-    "Leaderships",
-    "Programs",
-  ];
-  return (
-    <div className="space-y-1">
-      <label className="block font-medium">Select Team</label>
-      <select {...props} name="team" className="w-full border rounded p-2">
-        <option value="">Select Team</option>
-        {options.map((team) => (
-          <option key={team} value={team}>
-            {team}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}

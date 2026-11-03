@@ -177,7 +177,7 @@ export default function BlogEditor() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex h-full">
       <EditPanel
         editors={editors}
         dispatch={dispatch}
@@ -197,7 +197,8 @@ export default function BlogEditor() {
         setCreatedAt={setCreatedAt}
         lang={lang}
       />
-      <div className="min-w-0 flex-1">
+      {/* The preview scrolls on its own; the toolbar sticks to this container. */}
+      <div className="min-w-0 flex-1 overflow-y-auto">
         <EditorToolbar
           lang={lang}
           setLang={setLang}

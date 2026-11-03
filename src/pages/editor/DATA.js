@@ -24,7 +24,7 @@ export const bgOptions = [
   },
   {
     value: "slategray",
-    label: "primary",
+    label: "Slate",
   },
 ];
 

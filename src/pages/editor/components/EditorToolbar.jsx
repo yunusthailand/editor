@@ -10,15 +10,26 @@ const LANGUAGES = [
 // while scrolling. Unlike the floating card it replaces, it never overlays the
 // side panel, so nothing in the panel can be covered by it.
 export default function EditorToolbar({ lang, setLang, isEditing, onSave }) {
+  const activeIndex = LANGUAGES.findIndex((option) => option.value === lang);
+
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b bg-white/90 px-6 py-3 backdrop-blur">
+    <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-neutral-200 bg-white/90 px-6 py-3 backdrop-blur">
       <div className="flex items-center gap-3">
-        <span className="text-xs text-primary/60">Editing language</span>
+        <span className="text-[13px] text-neutral-600">Editing language</span>
+
+        {/* Segmented control: one thumb slides between the options instead of
+            each button fading its own fill, so the change reads as a single
+            movement (and can be reversed mid-way, since it's a transition). */}
         <div
           role="group"
           aria-label="Editing language"
-          className="flex rounded-control border border-primary/20 p-0.5 text-xs"
+          className="relative grid grid-cols-2 rounded-control bg-neutral-100 p-0.5 text-[13px]"
         >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-[0.4rem] bg-secondary transition-transform duration-300 ease-drawer motion-reduce:transition-none"
+            style={{ transform: `translateX(${activeIndex * 100}%)` }}
+          />
           {LANGUAGES.map((option) => (
             <button
               key={option.value}
@@ -26,10 +37,10 @@ export default function EditorToolbar({ lang, setLang, isEditing, onSave }) {
               aria-pressed={lang === option.value}
               onClick={() => setLang(option.value)}
               className={cn(
-                "rounded-[0.4rem] px-3 py-1.5 font-medium transition-all",
+                "relative rounded-[0.4rem] px-4 py-1.5 font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 motion-reduce:transition-none",
                 lang === option.value
-                  ? "bg-secondary text-white"
-                  : "text-primary/60 hover:bg-primary/5",
+                  ? "text-white"
+                  : "text-neutral-600 hover:text-neutral-900",
               )}
             >
               {option.label}

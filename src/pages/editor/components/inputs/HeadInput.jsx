@@ -1,9 +1,13 @@
-export default function HeadInput({ value, onChange }) {
+import { CONTROL } from "../EditorField";
+
+export default function HeadInput({ id, value, onChange, placeholder }) {
   return (
     <input
+      id={id}
       value={value}
       onChange={onChange}
-      className="bg-white border p-2 w-full rounded"
+      placeholder={placeholder}
+      className={CONTROL}
     />
   );
 }

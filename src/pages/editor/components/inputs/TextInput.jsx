@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { CONTROL } from "../EditorField";
 
-export default function TextInput({ value, onChange }) {
+export default function TextInput({ id, value, onChange }) {
   const [expanded, setExpanded] = useState(false);
 
   function handleToggleExpand() {
@@ -8,21 +9,23 @@ export default function TextInput({ value, onChange }) {
   }
 
   return (
-    <div className="flex flex-col items-start space-y-2">
-      <button
-        type="button"
-        onClick={handleToggleExpand}
-        className="px-2 py-1 border rounded text-xs bg-white hover:bg-gray-100 transition-all"
-      >
-        {expanded ? "Collapse Input" : "Expand Input"}
-      </button>
-
+    <div className="flex flex-col items-end gap-1.5">
       <textarea
+        id={id}
         value={value}
         rows={expanded ? 15 : 7}
         onChange={onChange}
-        className="bg-white border p-2 w-full resize-none rounded"
+        className={`${CONTROL} resize-none leading-relaxed`}
       />
+
+      <button
+        type="button"
+        onClick={handleToggleExpand}
+        aria-expanded={expanded}
+        className="rounded-control px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        {expanded ? "Collapse" : "Expand"}
+      </button>
     </div>
   );
 }

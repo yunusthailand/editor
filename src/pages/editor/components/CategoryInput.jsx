@@ -1,9 +1,15 @@
+import { useId } from "react";
+import { Field, SelectField } from "./EditorField";
+
 export default function CategoryInput({
   category,
   setCategory,
   subcategory,
   setSubcategory,
 }) {
+  const categoryId = useId();
+  const subcategoryId = useId();
+
   function handleSetCategory(e) {
     const value = e.target.value;
 
@@ -21,40 +27,37 @@ export default function CategoryInput({
   }
 
   return (
-    <div className="flex flex-col space-y-2 w-full">
-      <label className="text-white text-sm font-semibold">Category</label>
+    <div className="space-y-4">
+      <Field label="Category" htmlFor={categoryId}>
+        <SelectField
+          id={categoryId}
+          value={category}
+          onChange={handleSetCategory}
+        >
+          <option value="">Select a category</option>
+          <option value="perspectives">Perspectives</option>
+          <option value="knowledge">Knowledge</option>
+        </SelectField>
+      </Field>
 
-      <select
-        value={category}
-        onChange={handleSetCategory}
-        className="rounded border px-3 py-2 bg-white text-black text-sm"
+      <Field
+        label="Subcategory"
+        htmlFor={subcategoryId}
+        hint="Choosing one files the post under Knowledge."
       >
-        <option value="">-- Select a Category --</option>
-
-        <option value="perspectives">Perspectives</option>
-
-        <option value="knowledge">Knowledge</option>
-      </select>
-
-      <label className="text-white text-sm font-semibold">Subcategory</label>
-
-      <select
-        value={subcategory}
-        onChange={handleSetSubcategory}
-        className="rounded border px-3 py-2 bg-white text-black text-sm"
-      >
-        <option value="">-- Select a Subcategory --</option>
-
-        <option value="publication">Publication</option>
-
-        <option value="press-release">Press Release</option>
-
-        <option value="case-studies">Case Studies</option>
-
-        <option value="toolkit">Toolkit</option>
-
-        <option value="videos">Videos</option>
-      </select>
+        <SelectField
+          id={subcategoryId}
+          value={subcategory}
+          onChange={handleSetSubcategory}
+        >
+          <option value="">Select a subcategory</option>
+          <option value="publication">Publication</option>
+          <option value="press-release">Press Release</option>
+          <option value="case-studies">Case Studies</option>
+          <option value="toolkit">Toolkit</option>
+          <option value="videos">Videos</option>
+        </SelectField>
+      </Field>
     </div>
   );
 }

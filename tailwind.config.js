@@ -43,6 +43,17 @@ export default {
         card: "0 1px 3px rgb(0 0 0 / 0.08)",
       },
 
+      // Named so they resolve unambiguously: arbitrary `duration-[…]` and
+      // `ease-[…]` clash with tailwindcss-animate's own utilities and are
+      // silently dropped. `drawer` is the iOS sheet curve (fast start, long soft
+      // landing) used for anything that opens, slides or expands.
+      transitionTimingFunction: {
+        drawer: "cubic-bezier(0.32, 0.72, 0, 1)",
+      },
+      transitionDuration: {
+        250: "250ms",
+      },
+
       fontFamily: {
         sans: ["Jost", "Sarabun", "sans-serif"],
       },

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CONTROL } from "../EditorField";
 
 // Items are separated by newlines, not commas: a markdown link's text can
 // legitimately contain a comma (e.g. "[Smith, John](example.com)"), and so can
@@ -14,7 +15,7 @@ function parseItems(text) {
     .filter(Boolean);
 }
 
-export default function ArrayInput({ value, index, label, dispatch, lang }) {
+export default function ArrayInput({ id, value, index, label, dispatch, lang }) {
   const [text, setText] = useState(() => joinItems(value));
 
   // Tracks the last value we either received from or sent to the reducer, so we
@@ -56,11 +57,12 @@ export default function ArrayInput({ value, index, label, dispatch, lang }) {
 
   return (
     <textarea
+      id={id}
       value={text}
       rows={4}
       onChange={(e) => setText(e.target.value)}
       onBlur={handleCommit}
-      className="bg-white border p-2 w-full rounded"
+      className={`${CONTROL} leading-relaxed`}
       placeholder="One item per line"
     />
   );

@@ -266,6 +266,11 @@ function BlogFilter({
   // filterable here even once they're off the public roster.
   const { data: members = [] } = useTeamMembers();
 
+  // Sort isn't part of "filters" (resetting leaves it alone), so it doesn't
+  // count here; the button only enables when there's something to clear.
+  const hasActiveFilters =
+    Boolean(searchInput) || Object.values(filters).some(Boolean);
+
   // Subcategories only exist under "knowledge", so the two selects are coupled:
   // picking a subcategory implies that category, and leaving it clears them.
   const handleChange = (e) => {
@@ -327,7 +332,13 @@ function BlogFilter({
           </select>
         </Field>
 
-        <Button variant="outline" size="sm" onClick={onReset} className="ml-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onReset}
+          disabled={!hasActiveFilters}
+          className="ml-auto"
+        >
           Reset filters
         </Button>
       </div>
@@ -434,9 +445,7 @@ function BlogFilter({
 function FilterGroup({ label, children }) {
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-medium uppercase tracking-widest text-primary/50">
-        {label}
-      </p>
+      <p className="text-xs font-medium text-neutral-600">{label}</p>
       <div className="flex flex-wrap gap-3">{children}</div>
     </div>
   );

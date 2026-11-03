@@ -1,3 +1,6 @@
+import { useId } from "react";
+import { CONTROL, Field, LangBadge } from "./EditorField";
+
 export default function TitleInput({
   title,
   setTitle,
@@ -5,31 +8,26 @@ export default function TitleInput({
   setTitleTh,
   lang,
 }) {
+  const id = useId();
+  const isThai = lang === "th";
+
   return (
-    <div className="flex flex-col space-y-2 w-full">
-      <label className="text-white text-sm font-semibold">
-        Blog Title{" "}
-        {lang === "th" && (
-          <span className="text-yellow-300 text-[10px]">TH</span>
-        )}
-      </label>
-      {lang === "th" ? (
-        <input
-          type="text"
-          value={title_th}
-          onChange={(e) => setTitleTh(e.target.value)}
-          placeholder="ชื่อบล็อกภาษาไทย..."
-          className="rounded border px-3 py-2 bg-white text-black text-sm placeholder:text-gray-500"
-        />
-      ) : (
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter your blog title..."
-          className="rounded border px-3 py-2 bg-white text-black text-sm placeholder:text-gray-500"
-        />
-      )}
-    </div>
+    <Field
+      label="Blog title"
+      htmlFor={id}
+      badge={isThai && <LangBadge />}
+      hint={isThai ? "Leave empty to use the English title." : undefined}
+    >
+      <input
+        id={id}
+        type="text"
+        value={isThai ? title_th : title}
+        onChange={(e) => (isThai ? setTitleTh : setTitle)(e.target.value)}
+        placeholder={
+          isThai ? "ชื่อบล็อกภาษาไทย..." : "Enter your blog title..."
+        }
+        className={CONTROL}
+      />
+    </Field>
   );
 }

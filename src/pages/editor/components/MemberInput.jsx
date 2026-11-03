@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { Field, SelectField } from "./EditorField";
 
 const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
 export default function MemberInput({ author, setAuthor }) {
   const [members, setMembers] = useState([]);
+  const id = useId();
 
   useEffect(() => {
     async function getMembers() {
@@ -34,22 +36,16 @@ export default function MemberInput({ author, setAuthor }) {
   }
 
   return (
-    <div className="flex flex-col space-y-2 w-full">
-      <label className="text-white text-sm font-semibold">Select Author</label>
-
-      <select
-        value={author?.id || ""}
-        onChange={handleSelect}
-        className="rounded border px-3 py-2 bg-white text-black text-sm"
-      >
-        <option value="">-- Select an Author --</option>
+    <Field label="Author" htmlFor={id}>
+      <SelectField id={id} value={author?.id || ""} onChange={handleSelect}>
+        <option value="">Select an author</option>
 
         {members.map((member) => (
           <option key={member.id} value={member.id}>
             {member.name}
           </option>
         ))}
-      </select>
-    </div>
+      </SelectField>
+    </Field>
   );
 }

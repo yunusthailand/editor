@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 
 import clsx from "clsx";
 
@@ -10,13 +10,28 @@ export default function RootLayout() {
   const links = ["blogs", "teams", "ventures", "programs"];
   const { logout } = useAuth();
 
+  // The editor is a workspace, not a page: the viewport is split into a fixed
+  // sidebar and a preview that scroll independently, so the shell stops
+  // scrolling and the nav is compacted to give the work more room.
+  const isEditor = useLocation().pathname.startsWith("/editor");
+
   return (
-    <div className="min-h-screen bg-background text-primary">
+    <div
+      className={clsx(
+        "bg-background text-primary",
+        isEditor ? "flex h-screen flex-col overflow-hidden" : "min-h-screen",
+      )}
+    >
       {/* Navbar — teal bar spans the full viewport, links stay centered in a
           max-width container so they line up with the page content below. */}
 
-      <nav className="bg-secondary text-white">
-        <div className="flex items-center justify-between gap-4 p-6 max-w-screen-lg mx-auto">
+      <nav className="shrink-0 bg-secondary text-white">
+        <div
+          className={clsx(
+            "flex items-center justify-between gap-4 max-w-screen-lg mx-auto",
+            isEditor ? "px-6 py-3" : "p-6",
+          )}
+        >
           {/* Balances the Logout control so the links stay visually centered. */}
           <span className="w-16 hidden sm:block" aria-hidden="true" />
 
@@ -53,7 +68,7 @@ export default function RootLayout() {
 
       {/* Page Content */}
 
-      <main className="py-8">
+      <main className={isEditor ? "min-h-0 flex-1" : "py-8"}>
         <Outlet />
       </main>
     </div>

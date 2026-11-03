@@ -52,7 +52,7 @@ export default function BlogCard({ blog, getBlogs, deleteBlog }) {
   }
 
   return (
-    <Card className="w-52 p-4 flex flex-col gap-3 relative">
+    <Card className="w-52 p-4 flex flex-col gap-3 relative transition-shadow hover:shadow-md">
       {/* confirmation modal */}
       {showConfirm && (
         <div className="absolute inset-0 bg-white/95 flex flex-col justify-center items-center gap-4 rounded-card z-10">
