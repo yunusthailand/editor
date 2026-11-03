@@ -208,8 +208,12 @@ export default function BlogEditor() {
         lang={lang}
       />
 
-      <div className="fixed bottom-8 z-20 w-full">
-        <div className="flex justify-center bg-white max-w-96 mx-auto p-4 rounded-lg shadow-lg gap-4">
+      {/* The wrapper spans the full viewport width so the bar can be centred, but
+          it sits above the side panel. pointer-events-none keeps that empty
+          strip from swallowing clicks meant for the panel (the "Add" button
+          lives in the same band); only the visible card takes events. */}
+      <div className="fixed bottom-8 z-20 w-full pointer-events-none">
+        <div className="pointer-events-auto flex justify-center bg-white max-w-96 mx-auto p-4 rounded-lg shadow-lg gap-4">
           <button
             onClick={() => setLang(lang === "en" ? "th" : "en")}
             className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
